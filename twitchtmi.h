@@ -2,9 +2,12 @@
 
 #include <znc/Modules.h>
 #include <unordered_set>
+#include <unordered_map>
 
-typedef std::unordered_set<CString, std::hash<std::string>, std::equal_to<std::string> > CStringSet;
+
 class TwitchTMIUpdateTimer;
+
+typedef std::unordered_map<CString, int, std::hash<std::string>, std::equal_to<std::string> > ChannelUserMap;
 
 class TwitchTMI : public CModule
 {
@@ -19,6 +22,7 @@ class TwitchTMI : public CModule
 
 	virtual void OnIRCConnected();
 
+	virtual CModule::EModRet OnRaw(CString &sLine);
 	virtual CModule::EModRet OnUserJoin(CString &sChannel, CString &sKey);
 	virtual CModule::EModRet OnUserPart(CString &sChannel, CString &sMessage);
 	virtual CModule::EModRet OnPrivMsg(CNick &nick, CString &sMessage);
@@ -30,8 +34,8 @@ class TwitchTMI : public CModule
 	void remChannel(const CString &name);
 
 	private:
-	CStringSet channels;
-	CStringSet currentUsers;
+	std::unordered_map<CString, ChannelUserMap, std::hash<std::string>, std::equal_to<std::string> > channels;
+
 	TwitchTMIUpdateTimer *timer;
 };
 
@@ -44,6 +48,8 @@ class TwitchTMIUpdateTimer : public CTimer
 
 	private:
 	virtual void RunJob();
+	void procUser(const CString &name, const CString &channel, int level, ChannelUserMap &umap);
+	void leaveUser(const CString &name, const CString &channel, ChannelUserMap& umap);
 
 	private:
 	TwitchTMI *mod;
