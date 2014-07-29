@@ -6,6 +6,7 @@
 #include <znc/Chan.h>
 
 #include "twitchtmi.h"
+#include "jload.h"
 
 
 void TwitchTMI::init()
@@ -101,6 +102,9 @@ TwitchTMIUpdateTimer::TwitchTMIUpdateTimer(TwitchTMI *tmod)
 
 void TwitchTMIUpdateTimer::RunJob()
 {
+	CString str = getUrl("https://tmi.twitch.tv/group/user/misskaddykins/chatters");
+
+	mod->PutModule(str);
 }
 
 

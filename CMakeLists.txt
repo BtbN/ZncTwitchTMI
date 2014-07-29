@@ -12,6 +12,8 @@ find_package(CURL REQUIRED)
 set(twitch_SOURCES
 	twitchtmi.cpp
 	twitchtmi.h
+	jload.cpp
+	jload.h
 	json/jsoncpp.cpp
 	json/json.h)
 
