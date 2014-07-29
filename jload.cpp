@@ -30,6 +30,7 @@ std::string getUrl(const char *url, const char* extraHeader)
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resStr);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCB);
 
