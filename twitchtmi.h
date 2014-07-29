@@ -1,20 +1,19 @@
 #pragma once
 
 #include <znc/Modules.h>
-#include <unordered_set>
+#include <znc/Threads.h>
 #include <unordered_map>
 
 
 class TwitchTMIUpdateTimer;
 
-typedef std::unordered_map<CString, int, std::hash<std::string>, std::equal_to<std::string> > ChannelUserMap;
-
 class TwitchTMI : public CModule
 {
 	friend class TwitchTMIUpdateTimer;
+	friend class TwitchTMIJob;
 
 	public:
-	MODCONSTRUCTOR(TwitchTMI) { init(); }
+	MODCONSTRUCTOR(TwitchTMI) { }
 	virtual ~TwitchTMI();
 
 	virtual bool OnLoad(const CString &sArgsi, CString &sMessage);
@@ -22,21 +21,14 @@ class TwitchTMI : public CModule
 
 	virtual void OnIRCConnected();
 
-	virtual CModule::EModRet OnRaw(CString &sLine);
+	virtual CModule::EModRet OnUserRaw(CString &sLine);
 	virtual CModule::EModRet OnUserJoin(CString &sChannel, CString &sKey);
-	virtual CModule::EModRet OnUserPart(CString &sChannel, CString &sMessage);
 	virtual CModule::EModRet OnPrivMsg(CNick &nick, CString &sMessage);
 	virtual CModule::EModRet OnChanMsg(CNick &nick, CChan &channel, CString &sMessage);
 
 	private:
-	void init();
-	void addChannel(const CString &name);
-	void remChannel(const CString &name);
-
-	private:
-	std::unordered_map<CString, ChannelUserMap, std::hash<std::string>, std::equal_to<std::string> > channels;
-
 	TwitchTMIUpdateTimer *timer;
+	std::unordered_map<CString, CString, std::hash<std::string>, std::equal_to<std::string> > chanTopics;
 };
 
 class TwitchTMIUpdateTimer : public CTimer
@@ -48,9 +40,21 @@ class TwitchTMIUpdateTimer : public CTimer
 
 	private:
 	virtual void RunJob();
-	void procUser(const CString &name, const CString &channel, int level, ChannelUserMap &umap);
-	void leaveUser(const CString &name, const CString &channel, ChannelUserMap& umap);
 
 	private:
 	TwitchTMI *mod;
+};
+
+class TwitchTMIJob : public CJob
+{
+	public:
+	TwitchTMIJob(TwitchTMI *mod, const CString &channel):mod(mod),channel(channel) {}
+
+	virtual void runThread();
+	virtual void runMain();
+
+	private:
+	TwitchTMI *mod;
+	CString channel;
+	CString title;
 };

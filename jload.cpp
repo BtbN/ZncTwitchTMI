@@ -11,7 +11,7 @@ static size_t WriteCB(void *contents, size_t size, size_t nmemb, void *userp)
 	return size * nmemb;
 }
 
-std::string getUrl(const char *url)
+std::string getUrl(const char *url, const char* extraHeader)
 {
 	std::string resStr;
 
@@ -33,11 +33,25 @@ std::string getUrl(const char *url)
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 2500L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resStr);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCB);
 
+	struct curl_slist *hlist = nullptr;
+
+	if(extraHeader)
+	{
+		hlist = curl_slist_append(hlist, extraHeader);
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hlist);
+	}
+
 	res = curl_easy_perform(curl);
+
+	if(hlist)
+	{
+		curl_slist_free_all(hlist);
+	}
+
 	curl_easy_cleanup(curl);
 
 	if(res != CURLE_OK)
@@ -48,12 +62,12 @@ std::string getUrl(const char *url)
 	return resStr;
 }
 
-Json::Value getJsonFromUrl(const char* url)
+Json::Value getJsonFromUrl(const char* url, const char* extraHeader)
 {
 	Json::Value res;
 	Json::Reader reader;
 
-	std::string data = getUrl(url);
+	std::string data = getUrl(url, extraHeader);
 
 	if(data.empty())
 		return res;

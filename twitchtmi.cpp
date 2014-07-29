@@ -9,9 +9,6 @@
 #include "jload.h"
 
 
-void TwitchTMI::init()
-{
-}
 
 TwitchTMI::~TwitchTMI()
 {
@@ -22,69 +19,89 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 {
 	OnBoot();
 
+	if(GetNetwork())
+	{
+		for(CChan *ch: GetNetwork()->GetChans())
+		{
+			CString chname = ch->GetName().substr(1);
+
+			chanTopics.erase(chname);
+
+			CThreadPool::Get().addJob(new TwitchTMIJob(this, chname));
+		}
+	}
+
 	return true;
 }
 
 bool TwitchTMI::OnBoot()
 {
-	PutModule("OnLoad");
-
-	if(GetNetwork())
-	{
-		for(CChan *chan: GetNetwork()->GetChans())
-		{
-			addChannel(chan->GetName());
-		}
-
-		if(GetNetwork()->IsIRCConnected())
-			OnIRCConnected();
-	}
-
 	timer = new TwitchTMIUpdateTimer(this);
 	AddTimer(timer);
 
 	return true;
 }
 
-void TwitchTMI::addChannel(const CString& name)
-{
-	CString chname = name.substr(1);
-
-	auto it = channels.find(chname);
-	if(it == channels.end())
-		channels[chname] = ChannelUserMap();
-}
-
-void TwitchTMI::remChannel(const CString& name)
-{
-	CString chname = name.substr(1);
-
-	channels.erase(chname);
-}
-
 void TwitchTMI::OnIRCConnected()
 {
-	PutIRC("TWITCHCLIENT 3");
+	chanTopics.clear();
 }
 
-
-CModule::EModRet TwitchTMI::OnRaw(CString& sLine)
+CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
 {
-	if(sLine.Left(10).Equals(":jtv MODE "))
+	if(sLine.Left(5).Equals("WHO #"))
 		return CModule::HALT;
 
-	return CModule::CONTINUE;
+	if(sLine.Left(5).Equals("AWAY "))
+		return CModule::HALT;
+
+	if(sLine.Left(12).Equals("TWITCHCLIENT"))
+		return CModule::HALT;
+
+	if(sLine.Left(9).Equals("JTVCLIENT"))
+		return CModule::HALT;
+
+	if(!sLine.Left(7).Equals("TOPIC #"))
+		return CModule::CONTINUE;
+
+	CString chname = sLine.substr(7);
+	chname.Trim();
+
+	auto it = chanTopics.find(chname);
+
+	std::stringstream ss;
+
+	if(it != chanTopics.end())
+	{
+		ss << ":jtv 332 "
+		   << GetUser()->GetNick()
+		   << " #"
+		   << chname
+		   << " :"
+		   << it->second;
+	}
+	else
+	{
+		ss << ":jtv 331 "
+		   << GetUser()->GetNick()
+		   << " #"
+		   << chname
+		   << " :No topic is set";
+	}
+
+	PutUser(ss.str());
+
+	return CModule::HALT;
 }
 
 CModule::EModRet TwitchTMI::OnUserJoin(CString& sChannel, CString& sKey)
 {
-	addChannel(sChannel);
-	return CModule::CONTINUE;
-}
+	CString chname = sChannel.substr(1);
 
-CModule::EModRet TwitchTMI::OnUserPart(CString& sChannel, CString& sMessage)
-{
-	remChannel(sChannel);
+	chanTopics.erase(chname);
+
+	CThreadPool::Get().addJob(new TwitchTMIJob(this, chname));
+
 	return CModule::CONTINUE;
 }
 
@@ -107,115 +124,64 @@ CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMes
 
 
 TwitchTMIUpdateTimer::TwitchTMIUpdateTimer(TwitchTMI *tmod)
-	:CTimer(tmod, 10, 0, "TwitchTMIUpdateTimer", "Downloads Twitch information")
+	:CTimer(tmod, 30, 0, "TwitchTMIUpdateTimer", "Downloads Twitch information")
 	,mod(tmod)
 {
-
 }
 
 void TwitchTMIUpdateTimer::RunJob()
 {
-	for(auto &chPair: mod->channels)
+	if(!mod->GetNetwork())
+		return;
+
+	for(CChan *chan: mod->GetNetwork()->GetChans())
 	{
-		const CString &ch = chPair.first;
-		ChannelUserMap &umap = chPair.second;
-
-		std::string url = "https://tmi.twitch.tv/group/user/";
-		url.append(ch).append("/chatters");
-
-		Json::Value root = getJsonFromUrl(url.c_str());
-
-		if(root.isNull())
-			continue;
-
-		const Json::Value &chatters = root["chatters"];
-
-		if(chatters.isNull())
-			continue;
-
-		const Json::Value &viewers = chatters["viewers"];
-		const Json::Value &admins = chatters["admins"];
-		const Json::Value &staff = chatters["staff"];
-		const Json::Value &moderators = chatters["moderators"];
-
-		ChannelUserMap nmap;
-
-		for(const Json::Value &user: viewers)
-		{
-			procUser(user.asString(), ch, 0, umap);
-			nmap[user.asString()] = 0;
-		}
-
-		for(const Json::Value &user: moderators)
-		{
-			procUser(user.asString(), ch, 1, umap);
-			nmap[user.asString()] = 1;
-		}
-
-		for(const Json::Value &user: admins)
-		{
-			procUser(user.asString(), ch, 2, umap);
-			nmap[user.asString()] = 2;
-		}
-
-		for(const Json::Value &user: staff)
-		{
-			procUser(user.asString(), ch, 3, umap);
-			nmap[user.asString()] = 3;
-		}
-
-		std::unordered_set<CString, std::hash<std::string> > leftUsers;
-
-		for(const auto &pair: umap)
-		{
-			if(nmap.find(pair.first) == nmap.end())
-				leftUsers.insert(pair.first);
-		}
-
-		for(const CString &user: leftUsers)
-		{
-			leaveUser(user, ch, umap);
-		}
+		CString chname = chan->GetName().substr(1);
+		CThreadPool::Get().addJob(new TwitchTMIJob(mod, chname));
 	}
 }
 
-void TwitchTMIUpdateTimer::procUser(const CString& name, const CString& channel, int level, ChannelUserMap& umap)
-{
-	auto it = umap.find(name);
 
-	if(it == umap.end())
+void TwitchTMIJob::runThread()
+{
+	std::stringstream ss;
+	ss << "https://api.twitch.tv/kraken/channels/" << channel;
+
+	CString url = ss.str();
+
+	Json::Value root = getJsonFromUrl(url.c_str(), "Accept: application/vnd.twitchtv.v3+json");
+
+	if(root.isNull())
 	{
+		return;
+	}
+
+	Json::Value &titleVal = root["status"];
+
+	if(!titleVal.isString())
+		titleVal = root["title"];
+
+	if(!titleVal.isString())
+		return;
+
+	title = titleVal.asString();
+}
+
+void TwitchTMIJob::runMain()
+{
+	if(title.empty())
+		return;
+
+	if(!mod->chanTopics[channel].Equals(title, true))
+	{
+		mod->chanTopics[channel] = title;
+
 		std::stringstream ss;
-		ss << ":" << name << "!" << name << "@" << name << ".tmi.twitch.tv";
-		ss << " JOIN #" << channel;
+		ss << ":jtv TOPIC #" << channel << " :" << title;
 
 		mod->PutUser(ss.str());
-
-		umap[name] = level;
-	}
-	else
-	{
-		int olevel = it->second;
-
-		if(level != olevel)
-		{
-
-			umap[name] = level;
-		}
 	}
 }
-
-void TwitchTMIUpdateTimer::leaveUser(const CString& name, const CString& channel, ChannelUserMap& umap)
-{
-	umap.erase(name);
-
-	std::stringstream ss;
-	ss << ":" << name << "!" << name << "@" << name << ".tmi.twitch.tv";
-	ss << " PART #" << channel;
-
-	mod->PutUser(ss.str());
-}
-
 
 
 template<> void TModInfo<TwitchTMI>(CModInfo &info)
