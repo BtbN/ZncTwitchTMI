@@ -18,11 +18,7 @@ std::string getUrl(const char *url, const char* extraHeader)
 	CURL *curl;
 	CURLcode res;
 
-	if(!wasCurlInit)
-	{
-		curl_global_init(CURL_GLOBAL_ALL);
-		wasCurlInit = true;
-	}
+	initCurl();
 
 	curl = curl_easy_init();
 	if(!curl)
@@ -78,4 +74,14 @@ Json::Value getJsonFromUrl(const char* url, const char* extraHeader)
 		return Json::Value();
 
 	return res;
+}
+
+
+void initCurl()
+{
+	if(!wasCurlInit)
+	{
+		curl_global_init(CURL_GLOBAL_ALL);
+		wasCurlInit = true;
+	}
 }

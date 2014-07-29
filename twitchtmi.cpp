@@ -36,6 +36,8 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 
 bool TwitchTMI::OnBoot()
 {
+	initCurl();
+
 	timer = new TwitchTMIUpdateTimer(this);
 	AddTimer(timer);
 
