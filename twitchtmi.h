@@ -19,10 +19,12 @@ class TwitchTMI : public CModule
 	virtual bool OnLoad(const CString &sArgsi, CString &sMessage);
 	virtual bool OnBoot();
 
+	virtual void OnClientLogin();
 	virtual void OnIRCConnected();
 
 	virtual CModule::EModRet OnUserRaw(CString &sLine);
 	virtual CModule::EModRet OnUserJoin(CString &sChannel, CString &sKey);
+	virtual CModule::EModRet OnUserPart(CString &sChannel, CString &sMessage);
 	virtual CModule::EModRet OnPrivMsg(CNick &nick, CString &sMessage);
 	virtual CModule::EModRet OnChanMsg(CNick &nick, CChan &channel, CString &sMessage);
 

@@ -44,6 +44,17 @@ bool TwitchTMI::OnBoot()
 	return true;
 }
 
+void TwitchTMI::OnClientLogin()
+{
+	for(const auto &chanTopic: chanTopics)
+	{
+		std::stringstream ss;
+		ss << ":jtv TOPIC #" << chanTopic.first << " :" << chanTopic.second;
+
+		GetClient()->PutClient(ss.str());
+	}
+}
+
 void TwitchTMI::OnIRCConnected()
 {
 	chanTopics.clear();
@@ -103,6 +114,15 @@ CModule::EModRet TwitchTMI::OnUserJoin(CString& sChannel, CString& sKey)
 	chanTopics.erase(chname);
 
 	CThreadPool::Get().addJob(new TwitchTMIJob(this, chname));
+
+	return CModule::CONTINUE;
+}
+
+CModule::EModRet TwitchTMI::OnUserPart(CString &sChannel, CString &sMessage)
+{
+	CString chname = sChannel.substr(1);
+
+	chanTopics.erase(chname);
 
 	return CModule::CONTINUE;
 }
