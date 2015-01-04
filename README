@@ -1,1 +1,6 @@
 ZNC Module for Twitch IRC Chat interface
+
+If the presence of this module makes your ZNC behave weird or even makes it crash,
+you might have to use a diffrent SSL backend for libcurl, as the default openssl
+based one conflicts with znc itself using openssl.
+On Debian-Based distributions, just install for example libcurl3-nss
