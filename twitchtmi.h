@@ -3,7 +3,7 @@
 #include <znc/Modules.h>
 #include <znc/Threads.h>
 #include <unordered_map>
-
+#include <ctime>
 
 class TwitchTMIUpdateTimer;
 
@@ -13,7 +13,7 @@ class TwitchTMI : public CModule
 	friend class TwitchTMIJob;
 
 	public:
-	MODCONSTRUCTOR(TwitchTMI) { }
+	MODCONSTRUCTOR(TwitchTMI) { lastFrankerZ = 0; }
 	virtual ~TwitchTMI();
 
 	virtual bool OnLoad(const CString &sArgsi, CString &sMessage);
@@ -31,6 +31,7 @@ class TwitchTMI : public CModule
 	private:
 	TwitchTMIUpdateTimer *timer;
 	std::unordered_map<CString, CString, std::hash<std::string>, std::equal_to<std::string> > chanTopics;
+	std::time_t lastFrankerZ;
 };
 
 class TwitchTMIUpdateTimer : public CTimer

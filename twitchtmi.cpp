@@ -140,7 +140,7 @@ CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMes
 	if(nick.GetNick().Equals("jtv", true))
 		return CModule::HALT;
 
-	if(sMessage == "FrankerZ")
+	if(sMessage == "FrankerZ" && std::time(nullptr) - lastFrankerZ > 10)
 	{
 		std::stringstream ss1, ss2;
 		CString mynick = GetUser()->GetNick();
@@ -150,6 +150,8 @@ CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMes
 
 		PutIRC(ss1.str());
 		PutUser(ss2.str());
+
+		lastFrankerZ = std::time(nullptr);
 	}
 
 	return CModule::CONTINUE;
