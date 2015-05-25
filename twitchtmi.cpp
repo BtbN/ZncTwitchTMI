@@ -143,7 +143,7 @@ CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMes
 	if(sMessage == "FrankerZ" && std::time(nullptr) - lastFrankerZ > 10)
 	{
 		std::stringstream ss1, ss2;
-		CString mynick = GetUser()->GetNick();
+		CString mynick = GetNetwork()->GetCurNick();
 
 		ss1 << "PRIVMSG " << channel.GetName() << " :FrankerZ";
 		ss2 << ":" << mynick << "!" << mynick << "@" << mynick << ".tmi.twitch.tv PRIVMSG " << channel.GetName() << " :FrankerZ";
