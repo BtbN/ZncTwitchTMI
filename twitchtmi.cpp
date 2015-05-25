@@ -129,18 +129,18 @@ CModule::EModRet TwitchTMI::OnUserPart(CString &sChannel, CString &sMessage)
 
 CModule::EModRet TwitchTMI::OnPrivMsg(CNick& nick, CString& sMessage)
 {
-	if(!nick.GetNick().Equals("jtv", true))
-		return CModule::CONTINUE;
+	if(nick.GetNick().Equals("jtv", true))
+		return CModule::HALT;
 
-	return CModule::HALT;
+	return CModule::CONTINUE;
 }
 
 CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMessage)
 {
-	if(!nick.GetNick().Equals("jtv", true))
-		return CModule::CONTINUE;
+	if(nick.GetNick().Equals("jtv", true))
+		return CModule::HALT;
 
-	return CModule::HALT;
+	return CModule::CONTINUE;
 }
 
 
