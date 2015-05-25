@@ -140,6 +140,18 @@ CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMes
 	if(nick.GetNick().Equals("jtv", true))
 		return CModule::HALT;
 
+	if(sMessage == "FrankerZ")
+	{
+		std::stringstream ss1, ss2;
+		CString mynick = GetUser()->GetNick();
+
+		ss1 << "PRIVMSG " << channel.GetName() << " :FrankerZ";
+		ss2 << ":" << mynick << "!" << mynick << "@" << mynick << ".tmi.twitch.tv PRIVMSG " << channel.GetName() << " :FrankerZ";
+
+		PutIRC(ss1.str());
+		PutUser(ss2.str());
+	}
+
 	return CModule::CONTINUE;
 }
 
