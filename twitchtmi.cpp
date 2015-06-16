@@ -25,10 +25,9 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 		for(CChan *ch: GetNetwork()->GetChans())
 		{
 			CString chname = ch->GetName().substr(1);
-
-			chanTopics.erase(chname);
-
 			CThreadPool::Get().addJob(new TwitchTMIJob(this, chname));
+
+			ch->SetTopic(CString());
 		}
 	}
 
@@ -45,21 +44,9 @@ bool TwitchTMI::OnBoot()
 	return true;
 }
 
-void TwitchTMI::OnClientLogin()
-{
-	for(const auto &chanTopic: chanTopics)
-	{
-		std::stringstream ss;
-		ss << ":jtv TOPIC #" << chanTopic.first << " :" << chanTopic.second;
-
-		GetClient()->PutClient(ss.str());
-	}
-}
-
 void TwitchTMI::OnIRCConnected()
 {
 	PutIRC("CAP REQ :twitch.tv/membership");
-	chanTopics.clear();
 }
 
 CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
@@ -79,27 +66,27 @@ CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
 	if(!sLine.Left(7).Equals("TOPIC #"))
 		return CModule::CONTINUE;
 
-	CString chname = sLine.substr(7);
+	CString chname = sLine.substr(6);
 	chname.Trim();
 
-	auto it = chanTopics.find(chname);
+	CChan *chan = GetNetwork()->FindChan(chname);
 
 	std::stringstream ss;
 
-	if(it != chanTopics.end())
+	if(chan->GetTopic().Trim_n() != "")
 	{
 		ss << ":jtv 332 "
-		   << GetUser()->GetNick()
-		   << " #"
+		   << GetNetwork()->GetIRCNick().GetNick()
+		   << " "
 		   << chname
 		   << " :"
-		   << it->second;
+		   << chan->GetTopic();
 	}
 	else
 	{
 		ss << ":jtv 331 "
-		   << GetUser()->GetNick()
-		   << " #"
+		   << GetNetwork()->GetIRCNick().GetNick()
+		   << " "
 		   << chname
 		   << " :No topic is set";
 	}
@@ -112,19 +99,7 @@ CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
 CModule::EModRet TwitchTMI::OnUserJoin(CString& sChannel, CString& sKey)
 {
 	CString chname = sChannel.substr(1);
-
-	chanTopics.erase(chname);
-
 	CThreadPool::Get().addJob(new TwitchTMIJob(this, chname));
-
-	return CModule::CONTINUE;
-}
-
-CModule::EModRet TwitchTMI::OnUserPart(CString &sChannel, CString &sMessage)
-{
-	CString chname = sChannel.substr(1);
-
-	chanTopics.erase(chname);
 
 	return CModule::CONTINUE;
 }
@@ -223,9 +198,16 @@ void TwitchTMIJob::runMain()
 	if(title.empty())
 		return;
 
-	if(!mod->chanTopics[channel].Equals(title, true))
+	CChan *chan = mod->GetNetwork()->FindChan(CString("#") + channel);
+
+	if(!chan)
+		return;
+
+	if(!chan->GetTopic().Equals(title, true))
 	{
-		mod->chanTopics[channel] = title;
+		chan->SetTopic(title);
+		chan->SetTopicOwner("jtv");
+		chan->SetTopicDate((unsigned long)time(nullptr));
 
 		std::stringstream ss;
 		ss << ":jtv TOPIC #" << channel << " :" << title;
