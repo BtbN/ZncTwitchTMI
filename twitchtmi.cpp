@@ -157,6 +157,19 @@ CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMes
 	return CModule::CONTINUE;
 }
 
+bool TwitchTMI::OnServerCapAvailable(const CString &sCap)
+{
+	if(sCap == "twitch.tv/membership")
+	{
+		CUtils::PrintMessage("TwitchTMI: Requesting twitch.tv/membership cap");
+		return true;
+	}
+
+	CUtils::PrintMessage(CString("TwitchTMI: Not requesting ") + sCap + " cap");
+
+	return false;
+}
+
 
 
 TwitchTMIUpdateTimer::TwitchTMIUpdateTimer(TwitchTMI *tmod)

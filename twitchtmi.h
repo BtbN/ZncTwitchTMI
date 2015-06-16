@@ -27,6 +27,7 @@ class TwitchTMI : public CModule
 	virtual CModule::EModRet OnUserPart(CString &sChannel, CString &sMessage);
 	virtual CModule::EModRet OnPrivMsg(CNick &nick, CString &sMessage);
 	virtual CModule::EModRet OnChanMsg(CNick &nick, CChan &channel, CString &sMessage);
+	virtual bool OnServerCapAvailable(const CString &sCap);
 
 	private:
 	TwitchTMIUpdateTimer *timer;
