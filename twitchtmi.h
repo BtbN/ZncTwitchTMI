@@ -2,6 +2,7 @@
 
 #include <znc/Modules.h>
 #include <znc/Threads.h>
+#include <functional>
 #include <ctime>
 
 class TwitchTMIUpdateTimer;
@@ -57,4 +58,17 @@ class TwitchTMIJob : public CJob
 	TwitchTMI *mod;
 	CString channel;
 	CString title;
+};
+
+class GenericJob : public CJob
+{
+	public:
+	GenericJob(std::function<void()> threadFunc, std::function<void()> mainFunc):threadFunc(threadFunc),mainFunc(mainFunc) {}
+
+	virtual void runThread() { threadFunc(); }
+	virtual void runMain() { mainFunc(); }
+
+	private:
+	std::function<void()> threadFunc;
+	std::function<void()> mainFunc;
 };
