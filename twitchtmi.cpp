@@ -4,6 +4,7 @@
 #include <znc/Modules.h>
 #include <znc/Nick.h>
 #include <znc/Chan.h>
+#include <znc/IRCSock.h>
 
 #include "twitchtmi.h"
 #include "jload.h"
@@ -144,13 +145,13 @@ CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMes
 	if(sMessage == "FrankerZ" && std::time(nullptr) - lastFrankerZ > 10)
 	{
 		std::stringstream ss1, ss2;
-		CString mynick = GetNetwork()->GetCurNick();
+		CString mynick = GetNetwork()->GetIRCNick().GetNickMask();
 
 		ss1 << "PRIVMSG " << channel.GetName() << " :FrankerZ";
-		ss2 << ":" << mynick << "!" << mynick << "@" << mynick << ".tmi.twitch.tv PRIVMSG " << channel.GetName() << " :FrankerZ";
+		ss2 << ":" << mynick << " PRIVMSG " << channel.GetName() << " :FrankerZ";
 
 		PutIRC(ss1.str());
-		PutUser(ss2.str());
+		GetNetwork()->GetIRCSock()->ReadLine(ss2.str());
 
 		lastFrankerZ = std::time(nullptr);
 	}
