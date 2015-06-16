@@ -57,6 +57,7 @@ void TwitchTMI::OnClientLogin()
 
 void TwitchTMI::OnIRCConnected()
 {
+	PutIRC("CAP REQ :twitch.tv/membership");
 	chanTopics.clear();
 }
 
