@@ -96,7 +96,7 @@ CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMes
 		ss2 << ":" << mynick << " PRIVMSG " << channel.GetName() << " :FrankerZ";
 
 		PutIRC(ss1.str());
-		GetNetwork()->GetIRCSock()->ReadLine(ss2.str());
+		PutUser(ss2.str());
 
 		lastFrankerZ = std::time(nullptr);
 	}
