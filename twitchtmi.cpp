@@ -24,10 +24,10 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 	{
 		for(CChan *ch: GetNetwork()->GetChans())
 		{
+			ch->SetTopic(CString());
+
 			CString chname = ch->GetName().substr(1);
 			CThreadPool::Get().addJob(new TwitchTMIJob(this, chname));
-
-			ch->SetTopic(CString());
 		}
 	}
 
@@ -63,37 +63,7 @@ CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
 	if(sLine.Left(9).Equals("JTVCLIENT"))
 		return CModule::HALT;
 
-	if(!sLine.Left(7).Equals("TOPIC #"))
-		return CModule::CONTINUE;
-
-	CString chname = sLine.substr(6);
-	chname.Trim();
-
-	CChan *chan = GetNetwork()->FindChan(chname);
-
-	std::stringstream ss;
-
-	if(chan->GetTopic().Trim_n() != "")
-	{
-		ss << ":jtv 332 "
-		   << GetNetwork()->GetIRCNick().GetNick()
-		   << " "
-		   << chname
-		   << " :"
-		   << chan->GetTopic();
-	}
-	else
-	{
-		ss << ":jtv 331 "
-		   << GetNetwork()->GetIRCNick().GetNick()
-		   << " "
-		   << chname
-		   << " :No topic is set";
-	}
-
-	PutUser(ss.str());
-
-	return CModule::HALT;
+	return CModule::CONTINUE;
 }
 
 CModule::EModRet TwitchTMI::OnUserJoin(CString& sChannel, CString& sKey)
