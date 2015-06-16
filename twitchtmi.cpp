@@ -98,6 +98,10 @@ CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMes
 		PutIRC(ss1.str());
 		PutUser(ss2.str());
 
+		if(!channel.AutoClearChanBuffer() || !GetNetwork()->IsUserOnline() || channel.IsDetached()) {
+			channel.AddBuffer(ss2.str());
+		}
+
 		lastFrankerZ = std::time(nullptr);
 	}
 
