@@ -93,14 +93,19 @@ CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMes
 		CString mynick = GetNetwork()->GetIRCNick().GetNickMask();
 
 		ss1 << "PRIVMSG " << channel.GetName() << " :FrankerZ";
-		ss2 << ":" << mynick << " PRIVMSG " << channel.GetName() << " :FrankerZ";
+		ss2 << ":" << mynick << " PRIVMSG " << channel.GetName() << " :";
 
 		PutIRC(ss1.str());
-		PutUser(ss2.str());
+		CString s2 = ss2.str();
 
-		if(!channel.AutoClearChanBuffer() || !GetNetwork()->IsUserOnline() || channel.IsDetached()) {
-			channel.AddBuffer(ss2.str());
-		}
+		CThreadPool::Get().addJob(new GenericJob([]() {}, [this, s2, &channel]()
+		{
+			PutUser(s2 + "FrankerZ");
+
+			if(!channel.AutoClearChanBuffer() || !GetNetwork()->IsUserOnline() || channel.IsDetached()) {
+				channel.AddBuffer(s2+ "{text}", "FrankerZ");
+			}
+		}));
 
 		lastFrankerZ = std::time(nullptr);
 	}
