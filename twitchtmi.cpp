@@ -31,6 +31,8 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 		}
 	}
 
+	PutIRC("CAP REQ :twitch.tv/membership");
+
 	return true;
 }
 
