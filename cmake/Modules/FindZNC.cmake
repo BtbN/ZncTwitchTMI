@@ -32,7 +32,7 @@ else()
 	endif()
 
 	if(NOT ZNC_PKG_CFLAGS_OTHER)
-		set(ZNC_PKG_CFLAGS_OTHER "-Wall -W -Wno-unused-parameter -Woverloaded-virtual -Wshadow -pthread -fvisibility=hidden -fPIC -include znc/zncconfig.h")
+		set(ZNC_PKG_CFLAGS_OTHER -Wall -W -Wno-unused-parameter -Woverloaded-virtual -Wshadow -pthread -fvisibility=hidden -fPIC -include znc/zncconfig.h)
 	endif()
 
 	set(ZNC_DEFINITIONS ${ZNC_PKG_CFLAGS_OTHER} CACHE STRING "ZNC module compile options")
