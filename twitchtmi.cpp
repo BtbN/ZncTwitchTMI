@@ -6,6 +6,8 @@
 #include <znc/Chan.h>
 #include <znc/IRCSock.h>
 
+#include <limits>
+
 #include "twitchtmi.h"
 #include "jload.h"
 
@@ -30,6 +32,9 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 			CThreadPool::Get().addJob(new TwitchTMIJob(this, chname));
 		}
 	}
+
+	if(GetArgs().Token(0) != "FrankerZ")
+		lastFrankerZ = std::numeric_limits<decltype(lastFrankerZ)>::max();
 
 	PutIRC("CAP REQ :twitch.tv/membership");
 
