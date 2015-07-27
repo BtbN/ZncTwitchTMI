@@ -164,6 +164,7 @@ void TwitchTMIJob::runThread()
 	}
 
 	Json::Value &titleVal = root["status"];
+	title = CString();
 
 	if(!titleVal.isString())
 		titleVal = root["title"];
@@ -172,6 +173,7 @@ void TwitchTMIJob::runThread()
 		return;
 
 	title = titleVal.asString();
+	title.Trim();
 }
 
 void TwitchTMIJob::runMain()
@@ -184,7 +186,7 @@ void TwitchTMIJob::runMain()
 	if(!chan)
 		return;
 
-	if(!chan->GetTopic().Equals(title, true))
+	if(chan->GetTopic() != title)
 	{
 		chan->SetTopic(title);
 		chan->SetTopicOwner("jtv");
