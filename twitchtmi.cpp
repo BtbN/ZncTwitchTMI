@@ -208,7 +208,7 @@ void TwitchTMIJob::runMain()
 template<> void TModInfo<TwitchTMI>(CModInfo &info)
 {
 	info.SetWikiPage("Twitch");
-	info.SetHasArgs(false);
+	info.SetHasArgs(true);
 }
 
 NETWORKMODULEDEFS(TwitchTMI, "Twitch IRC helper module")
