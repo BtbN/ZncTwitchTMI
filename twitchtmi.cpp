@@ -123,6 +123,13 @@ CModule::EModRet TwitchTMI::OnChanMessage(CChanMessage &Message)
 		lastFrankerZ = std::time(nullptr);
 	}
 
+	CString realNick = Message.GetTag("display-name");
+
+	if(realNick != "")
+	{
+		Message.GetNick().SetNick(realNick);
+	}
+
 	return CModule::CONTINUE;
 }
 
