@@ -5,13 +5,16 @@
 #include <znc/Nick.h>
 #include <znc/Chan.h>
 #include <znc/IRCSock.h>
+#include <znc/version.h>
 
 #include <limits>
 
 #include "twitchtmi.h"
 #include "jload.h"
 
-
+#if (VERSION_MAJOR < 1) || (VERSION_MAJOR == 1 && VERSION_MINOR < 7)
+#error This module needs at least ZNC 1.7.0 or later.
+#endif
 
 TwitchTMI::~TwitchTMI()
 {
