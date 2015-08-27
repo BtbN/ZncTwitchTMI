@@ -25,6 +25,7 @@ class TwitchTMI : public CModule
 	virtual CModule::EModRet OnUserJoin(CString &sChannel, CString &sKey);
 	virtual CModule::EModRet OnPrivMessage(CPrivMessage &Message);
 	virtual CModule::EModRet OnChanMessage(CChanMessage &Message);
+	virtual CModule::EModRet OnChanActionMessage(CChanAction &Message);
 	virtual bool OnServerCapAvailable(const CString &sCap);
 
 	private:

@@ -133,6 +133,18 @@ CModule::EModRet TwitchTMI::OnChanMessage(CChanMessage &Message)
 	return CModule::CONTINUE;
 }
 
+CModule::EModRet TwitchTMI::OnChanActionMessage(CChanAction &Message)
+{
+	CString realNick = Message.GetTag("display-name");
+
+	if(realNick != "")
+	{
+		Message.GetNick().SetNick(realNick);
+	}
+
+	return CModule::CONTINUE;
+}
+
 bool TwitchTMI::OnServerCapAvailable(const CString &sCap)
 {
 	if(sCap == "twitch.tv/membership")
