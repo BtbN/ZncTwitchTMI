@@ -23,8 +23,8 @@ class TwitchTMI : public CModule
 
 	virtual CModule::EModRet OnUserRaw(CString &sLine);
 	virtual CModule::EModRet OnUserJoin(CString &sChannel, CString &sKey);
-	virtual CModule::EModRet OnPrivMsg(CNick &nick, CString &sMessage);
-	virtual CModule::EModRet OnChanMsg(CNick &nick, CChan &channel, CString &sMessage);
+	virtual CModule::EModRet OnPrivMessage(CPrivMessage &Message);
+	virtual CModule::EModRet OnChanMessage(CChanMessage &Message);
 	virtual bool OnServerCapAvailable(const CString &sCap);
 
 	private:

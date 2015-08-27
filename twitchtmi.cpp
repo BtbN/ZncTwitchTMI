@@ -81,36 +81,37 @@ CModule::EModRet TwitchTMI::OnUserJoin(CString& sChannel, CString& sKey)
 	return CModule::CONTINUE;
 }
 
-CModule::EModRet TwitchTMI::OnPrivMsg(CNick& nick, CString& sMessage)
+CModule::EModRet TwitchTMI::OnPrivMessage(CPrivMessage &Message)
 {
-	if(nick.GetNick().Equals("jtv", true))
+	if(Message.GetNick().GetNick().Equals("jtv"))
 		return CModule::HALT;
 
 	return CModule::CONTINUE;
 }
 
-CModule::EModRet TwitchTMI::OnChanMsg(CNick& nick, CChan& channel, CString& sMessage)
+CModule::EModRet TwitchTMI::OnChanMessage(CChanMessage &Message)
 {
-	if(nick.GetNick().Equals("jtv", true))
+	if(Message.GetNick().GetNick().Equals("jtv"))
 		return CModule::HALT;
 
-	if(sMessage == "FrankerZ" && std::time(nullptr) - lastFrankerZ > 10)
+	if(Message.GetText() == "FrankerZ" && std::time(nullptr) - lastFrankerZ > 10)
 	{
 		std::stringstream ss1, ss2;
 		CString mynick = GetNetwork()->GetIRCNick().GetNickMask();
+		CChan *chan = Message.GetChan();
 
-		ss1 << "PRIVMSG " << channel.GetName() << " :FrankerZ";
-		ss2 << ":" << mynick << " PRIVMSG " << channel.GetName() << " :";
+		ss1 << "PRIVMSG " << chan->GetName() << " :FrankerZ";
+		ss2 << ":" << mynick << " PRIVMSG " << chan->GetName() << " :";
 
 		PutIRC(ss1.str());
 		CString s2 = ss2.str();
 
-		CThreadPool::Get().addJob(new GenericJob([]() {}, [this, s2, &channel]()
+		CThreadPool::Get().addJob(new GenericJob([]() {}, [this, s2, chan]()
 		{
 			PutUser(s2 + "FrankerZ");
 
-			if(!channel.AutoClearChanBuffer() || !GetNetwork()->IsUserOnline() || channel.IsDetached()) {
-				channel.AddBuffer(s2+ "{text}", "FrankerZ");
+			if(!chan->AutoClearChanBuffer() || !GetNetwork()->IsUserOnline() || chan->IsDetached()) {
+				chan->AddBuffer(s2+ "{text}", "FrankerZ");
 			}
 		}));
 
