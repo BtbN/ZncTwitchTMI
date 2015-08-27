@@ -37,6 +37,7 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 		lastFrankerZ = std::numeric_limits<decltype(lastFrankerZ)>::max();
 
 	PutIRC("CAP REQ :twitch.tv/membership");
+	PutIRC("CAP REQ :twitch.tv/tags");
 
 	return true;
 }
@@ -54,6 +55,7 @@ bool TwitchTMI::OnBoot()
 void TwitchTMI::OnIRCConnected()
 {
 	PutIRC("CAP REQ :twitch.tv/membership");
+	PutIRC("CAP REQ :twitch.tv/tags");
 }
 
 CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
@@ -126,6 +128,11 @@ bool TwitchTMI::OnServerCapAvailable(const CString &sCap)
 	if(sCap == "twitch.tv/membership")
 	{
 		CUtils::PrintMessage("TwitchTMI: Requesting twitch.tv/membership cap");
+		return true;
+	}
+	else if(sCap == "twitch.tv/tags")
+	{
+		CUtils::PrintMessage("TwitchTMI: Requesting twitch.tv/tags cap");
 		return true;
 	}
 
