@@ -86,7 +86,7 @@ CModule::EModRet TwitchTMI::OnUserJoin(CString& sChannel, CString& sKey)
 	return CModule::CONTINUE;
 }
 
-CModule::EModRet TwitchTMI::OnPrivMessage(CPrivMessage &Message)
+CModule::EModRet TwitchTMI::OnPrivMessage(CTextMessage &Message)
 {
 	if(Message.GetNick().GetNick().Equals("jtv"))
 		return CModule::HALT;
@@ -94,7 +94,7 @@ CModule::EModRet TwitchTMI::OnPrivMessage(CPrivMessage &Message)
 	return CModule::CONTINUE;
 }
 
-CModule::EModRet TwitchTMI::OnChanMessage(CChanMessage &Message)
+CModule::EModRet TwitchTMI::OnChanMessage(CTextMessage &Message)
 {
 	if(Message.GetNick().GetNick().Equals("jtv"))
 		return CModule::HALT;
@@ -133,7 +133,7 @@ CModule::EModRet TwitchTMI::OnChanMessage(CChanMessage &Message)
 	return CModule::CONTINUE;
 }
 
-CModule::EModRet TwitchTMI::OnChanActionMessage(CChanAction &Message)
+CModule::EModRet TwitchTMI::OnChanActionMessage(CActionMessage &Message)
 {
 	CString realNick = Message.GetTag("display-name").Trim_n();
 
