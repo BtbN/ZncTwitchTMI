@@ -33,3 +33,7 @@ target_compile_options(twitch
 
 set_target_properties(twitch PROPERTIES
 	PREFIX "")
+
+include(GNUInstallDirs)
+
+install(TARGETS twitch DESTINATION "${LIBDIR}/znc")
