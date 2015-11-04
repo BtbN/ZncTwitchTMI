@@ -36,4 +36,4 @@ set_target_properties(twitch PROPERTIES
 
 include(GNUInstallDirs)
 
-install(TARGETS twitch DESTINATION "${LIBDIR}/znc")
+install(TARGETS twitch DESTINATION "${CMAKE_INSTALL_LIBDIR}/znc")
