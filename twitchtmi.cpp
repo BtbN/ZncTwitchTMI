@@ -163,6 +163,37 @@ bool TwitchTMI::OnServerCapAvailable(const CString &sCap)
 	return false;
 }
 
+CModule::EModRet TwitchTMI::OnUserTextMessage(CTextMessage &msg)
+{
+	if(msg.GetTarget().Left(1).Equals("#"))
+		return CModule::CONTINUE;
+
+	CIRCNetwork *twnw = GetTwitchGroupNetwork();
+	if(!twnw)
+		return CModule::CONTINUE;
+
+	msg.SetText(msg.GetText().insert(0, " ").insert(0, msg.GetTarget()).insert(0, "/w "));
+	msg.SetTarget("#jtv");
+
+	twnw->PutIRC(msg.ToString());
+
+	return CModule::HALT;
+}
+
+CIRCNetwork *TwitchTMI::GetTwitchGroupNetwork()
+{
+	for(CIRCNetwork *nw: GetUser()->GetNetworks())
+	{
+		for(CModule *mod: nw->GetModules())
+		{
+			if(mod->GetModName() == "twitch_group")
+				return nw;
+		}
+	}
+
+	return nullptr;
+}
+
 
 
 TwitchTMIUpdateTimer::TwitchTMIUpdateTimer(TwitchTMI *tmod)
