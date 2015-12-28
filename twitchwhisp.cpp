@@ -1,4 +1,9 @@
+#include <znc/IRCNetwork.h>
+#include <znc/IRCSock.h>
+#include <znc/User.h>
+
 #include "twitchwhisp.h"
+
 
 TwitchGroupChat::~TwitchGroupChat()
 {
@@ -32,21 +37,41 @@ CModule::EModRet TwitchGroupChat::OnRawMessage(CMessage &msg)
 		msg.SetCommand("PRIVMSG");
 
 	CString realNick = msg.GetTag("display-name").Trim_n();
-
 	if(realNick != "")
-	{
 		msg.GetNick().SetNick(realNick);
-	}
+
+	CIRCSock *twnw = GetTwitchNetwork();
+	if(twnw)
+		twnw->ReadLine(msg.ToString());
 
 	return CModule::CONTINUE;
 }
 
 CModule::EModRet TwitchGroupChat::OnUserTextMessage(CTextMessage &msg)
 {
+	if(msg.GetTarget().Left(1).Equals("#"))
+		return CModule::CONTINUE;
+
 	msg.SetText(msg.GetText().insert(0, " ").insert(0, msg.GetTarget()).insert(0, "/w "));
 	msg.SetTarget("#jtv");
 
 	return CModule::CONTINUE;
+}
+
+CIRCSock *TwitchGroupChat::GetTwitchNetwork()
+{
+	for(CIRCNetwork *nw: GetUser()->GetNetworks())
+	{
+		for(CModule *mod: nw->GetModules())
+		{
+			if(mod->GetModName() == "twitch")
+			{
+				return nw->GetIRCSock();
+			}
+		}
+	}
+
+	return nullptr;
 }
 
 template<> void TModInfo<TwitchGroupChat>(CModInfo &info)

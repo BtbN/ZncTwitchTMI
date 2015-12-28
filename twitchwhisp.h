@@ -15,5 +15,8 @@ class TwitchGroupChat : public CModule
 
 	virtual CModule::EModRet OnRawMessage(CMessage &msg);
 	virtual CModule::EModRet OnUserTextMessage(CTextMessage &msg);
+
+	private:
+	CIRCSock *GetTwitchNetwork();
 };
 
