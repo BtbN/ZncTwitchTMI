@@ -16,18 +16,18 @@ class TwitchTMI : public CModule
 	MODCONSTRUCTOR(TwitchTMI) { lastFrankerZ = 0; }
 	virtual ~TwitchTMI();
 
-	virtual bool OnLoad(const CString &sArgsi, CString &sMessage);
-	virtual bool OnBoot();
+	bool OnLoad(const CString &sArgsi, CString &sMessage) override;
+	bool OnBoot() override;
 
-	virtual void OnIRCConnected();
+	void OnIRCConnected() override;
 
-	virtual CModule::EModRet OnUserRaw(CString &sLine);
-	virtual CModule::EModRet OnUserJoin(CString &sChannel, CString &sKey);
-	virtual CModule::EModRet OnPrivMessage(CTextMessage &Message);
-	virtual CModule::EModRet OnChanMessage(CTextMessage &Message);
-	virtual CModule::EModRet OnChanActionMessage(CActionMessage &Message);
-	virtual CModule::EModRet OnUserTextMessage(CTextMessage &msg);
-	virtual bool OnServerCapAvailable(const CString &sCap);
+	CModule::EModRet OnUserRaw(CString &sLine) override;
+	CModule::EModRet OnUserJoin(CString &sChannel, CString &sKey) override;
+	CModule::EModRet OnPrivMessage(CTextMessage &Message) override;
+	CModule::EModRet OnChanMessage(CTextMessage &Message) override;
+	CModule::EModRet OnChanActionMessage(CActionMessage &Message) override;
+	CModule::EModRet OnUserTextMessage(CTextMessage &msg) override;
+	bool OnServerCapAvailable(const CString &sCap) override;
 
 	private:
 	CIRCNetwork *GetTwitchGroupNetwork();
@@ -45,7 +45,7 @@ class TwitchTMIUpdateTimer : public CTimer
 	TwitchTMIUpdateTimer(TwitchTMI *mod);
 
 	private:
-	virtual void RunJob();
+	void RunJob() override;
 
 	private:
 	TwitchTMI *mod;
@@ -56,8 +56,8 @@ class TwitchTMIJob : public CJob
 	public:
 	TwitchTMIJob(TwitchTMI *mod, const CString &channel):mod(mod),channel(channel) {}
 
-	virtual void runThread();
-	virtual void runMain();
+	void runThread() override;
+	void runMain() override;
 
 	private:
 	TwitchTMI *mod;
@@ -70,10 +70,11 @@ class GenericJob : public CJob
 	public:
 	GenericJob(std::function<void()> threadFunc, std::function<void()> mainFunc):threadFunc(threadFunc),mainFunc(mainFunc) {}
 
-	virtual void runThread() { threadFunc(); }
-	virtual void runMain() { mainFunc(); }
+	void runThread() override { threadFunc(); }
+	void runMain() override { mainFunc(); }
 
 	private:
 	std::function<void()> threadFunc;
 	std::function<void()> mainFunc;
 };
+

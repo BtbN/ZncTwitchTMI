@@ -8,13 +8,13 @@ class TwitchGroupChat : public CModule
 	MODCONSTRUCTOR(TwitchGroupChat) {}
 	virtual ~TwitchGroupChat();
 
-	virtual bool OnLoad(const CString &sArgsi, CString &sMessage);
-	virtual void OnIRCConnected();
+	bool OnLoad(const CString &sArgsi, CString &sMessage) override;
+	void OnIRCConnected() override;
 
-	virtual bool OnServerCapAvailable(const CString &sCap);
+	bool OnServerCapAvailable(const CString &sCap) override;
 
-	virtual CModule::EModRet OnRawMessage(CMessage &msg);
-	virtual CModule::EModRet OnUserTextMessage(CTextMessage &msg);
+	CModule::EModRet OnRawMessage(CMessage &msg) override;
+	CModule::EModRet OnUserTextMessage(CTextMessage &msg) override;
 
 	private:
 	CIRCSock *GetTwitchNetwork();
