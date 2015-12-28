@@ -17,6 +17,10 @@ set(twitch_SOURCES
 	json/jsoncpp.cpp
 	json/json.h)
 
+set(twitch_group_SOURCES
+	twitchwhisp.cpp
+	twitchwhisp.h)
+
 add_library(twitch MODULE
 	${twitch_SOURCES})
 target_link_libraries(twitch
@@ -30,10 +34,24 @@ target_compile_options(twitch
 	PRIVATE ${ZNC_DEFINITIONS} -Wno-shadow
 	PUBLIC -fno-strict-aliasing
 	PUBLIC -std=gnu++11)
-
 set_target_properties(twitch PROPERTIES
 	PREFIX "")
 
+add_library(twitch_group MODULE
+	${twitch_group_SOURCES})
+target_link_libraries(twitch_group
+	${ZNC_LIBRARIES})
+target_include_directories(twitch_group SYSTEM
+	PRIVATE
+		${ZNC_INCLUDE_DIRS})
+target_compile_options(twitch_group
+	PRIVATE ${ZNC_DEFINITIONS} -Wno-shadow
+	PUBLIC -fno-strict-aliasing
+	PUBLIC -std=gnu++11)
+set_target_properties(twitch_group PROPERTIES
+	PREFIX "")
+
+
 include(GNUInstallDirs)
 
-install(TARGETS twitch DESTINATION "${CMAKE_INSTALL_LIBDIR}/znc")
+install(TARGETS twitch twitch_group DESTINATION "${CMAKE_INSTALL_LIBDIR}/znc")
