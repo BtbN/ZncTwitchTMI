@@ -77,7 +77,6 @@ Json::Value getJsonFromUrl(const char* url, const char* extraHeader)
 	return res;
 }
 
-
 void initCurl()
 {
 	if(!wasCurlInit)

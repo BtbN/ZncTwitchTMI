@@ -54,7 +54,7 @@ class TwitchTMIUpdateTimer : public CTimer
 class TwitchTMIJob : public CJob
 {
 	public:
-	TwitchTMIJob(TwitchTMI *mod, const CString &channel):mod(mod),channel(channel) {}
+	TwitchTMIJob(TwitchTMI *mod, const CString &channel):mod(mod),channel(channel),live(false) {}
 
 	void runThread() override;
 	void runMain() override;
@@ -63,6 +63,7 @@ class TwitchTMIJob : public CJob
 	TwitchTMI *mod;
 	CString channel;
 	CString title;
+	bool live;
 };
 
 class GenericJob : public CJob

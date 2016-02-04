@@ -217,29 +217,40 @@ void TwitchTMIUpdateTimer::RunJob()
 
 void TwitchTMIJob::runThread()
 {
-	std::stringstream ss;
+	std::stringstream ss, ss2;
 	ss << "https://api.twitch.tv/kraken/channels/" << channel;
+	ss2 << "https://api.twitch.tv/kraken/streams/" << channel;
 
 	CString url = ss.str();
+	CString url2 = ss2.str();
 
 	Json::Value root = getJsonFromUrl(url.c_str(), "Accept: application/vnd.twitchtv.v3+json");
+	Json::Value root2 = getJsonFromUrl(url2.c_str(), "Accept: application/vnd.twitchtv.v3+json");
 
-	if(root.isNull())
+	if(!root.isNull())
 	{
-		return;
+		Json::Value &titleVal = root["status"];
+		title = CString();
+
+		if(!titleVal.isString())
+			titleVal = root["title"];
+
+		if(titleVal.isString())
+		{
+			title = titleVal.asString();
+			title.Trim();
+		}
 	}
 
-	Json::Value &titleVal = root["status"];
-	title = CString();
+	live = false;
 
-	if(!titleVal.isString())
-		titleVal = root["title"];
+	if(!root2.isNull())
+	{
+		Json::Value &streamVal = root2["stream"];
 
-	if(!titleVal.isString())
-		return;
-
-	title = titleVal.asString();
-	title.Trim();
+		if(!streamVal.isNull())
+			live = true;
+	}
 }
 
 void TwitchTMIJob::runMain()
