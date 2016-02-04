@@ -94,6 +94,18 @@ CModule::EModRet TwitchTMI::OnPrivMessage(CTextMessage &Message)
 	return CModule::CONTINUE;
 }
 
+void TwitchTMI::PutUserChanMessage(CChan *chan, const CString &from, const CString &msg)
+{
+	std::stringstream ss;
+	ss << ":" << from << " PRIVMSG " << chan->GetName() << " :";
+	CString s = ss.str();
+
+	PutUser(s + msg);
+
+	if(!chan->AutoClearChanBuffer() || !GetNetwork()->IsUserOnline() || chan->IsDetached())
+		chan->AddBuffer(s + "{text}", msg);
+}
+
 CModule::EModRet TwitchTMI::OnChanMessage(CTextMessage &Message)
 {
 	if(Message.GetNick().GetNick().Equals("jtv"))
@@ -101,23 +113,16 @@ CModule::EModRet TwitchTMI::OnChanMessage(CTextMessage &Message)
 
 	if(Message.GetText() == "FrankerZ" && std::time(nullptr) - lastFrankerZ > 10)
 	{
-		std::stringstream ss1, ss2;
+		std::stringstream ss;
 		CString mynick = GetNetwork()->GetIRCNick().GetNickMask();
 		CChan *chan = Message.GetChan();
 
-		ss1 << "PRIVMSG " << chan->GetName() << " :FrankerZ";
-		ss2 << ":" << mynick << " PRIVMSG " << chan->GetName() << " :";
+		ss << "PRIVMSG " << chan->GetName() << " :FrankerZ";
+		PutIRC(ss.str());
 
-		PutIRC(ss1.str());
-		CString s2 = ss2.str();
-
-		CThreadPool::Get().addJob(new GenericJob([]() {}, [this, s2, chan]()
+		CThreadPool::Get().addJob(new GenericJob([]() {}, [this, chan, mynick]()
 		{
-			PutUser(s2 + "FrankerZ");
-
-			if(!chan->AutoClearChanBuffer() || !GetNetwork()->IsUserOnline() || chan->IsDetached()) {
-				chan->AddBuffer(s2+ "{text}", "FrankerZ");
-			}
+			PutUserChanMessage(chan, mynick, "FrankerZ");
 		}));
 
 		lastFrankerZ = std::time(nullptr);
@@ -273,6 +278,24 @@ void TwitchTMIJob::runMain()
 		ss << ":jtv TOPIC #" << channel << " :" << title;
 
 		mod->PutUser(ss.str());
+	}
+
+	auto it = mod->liveChannels.find(channel);
+	if(it != mod->liveChannels.end())
+	{
+		if(!live)
+		{
+			mod->liveChannels.erase(it);
+			mod->PutUserChanMessage(chan, "jtv", ">>> Channel just went offline! <<<");
+		}
+	}
+	else
+	{
+		if(live)
+		{
+			mod->liveChannels.insert(channel);
+			mod->PutUserChanMessage(chan, "jtv", ">>> Channel just went live! <<<");
+		}
 	}
 }
 

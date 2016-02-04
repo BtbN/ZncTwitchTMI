@@ -2,6 +2,8 @@
 
 #include <znc/Modules.h>
 #include <znc/Threads.h>
+
+#include <unordered_set>
 #include <functional>
 #include <ctime>
 
@@ -31,10 +33,12 @@ class TwitchTMI : public CModule
 
 	private:
 	CIRCNetwork *GetTwitchGroupNetwork();
+	void PutUserChanMessage(CChan *chan, const CString &format, const CString &text);
 
 	private:
 	TwitchTMIUpdateTimer *timer;
 	std::time_t lastFrankerZ;
+	std::unordered_set<CString> liveChannels;
 };
 
 class TwitchTMIUpdateTimer : public CTimer
