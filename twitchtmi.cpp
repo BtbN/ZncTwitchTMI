@@ -39,9 +39,6 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 	if(GetArgs().Token(0) != "FrankerZ")
 		lastFrankerZ = std::numeric_limits<decltype(lastFrankerZ)>::max();
 
-	PutIRC("CAP REQ :twitch.tv/membership");
-	PutIRC("CAP REQ :twitch.tv/tags");
-
 	return true;
 }
 
@@ -53,12 +50,6 @@ bool TwitchTMI::OnBoot()
 	AddTimer(timer);
 
 	return true;
-}
-
-void TwitchTMI::OnIRCConnected()
-{
-	PutIRC("CAP REQ :twitch.tv/membership");
-	PutIRC("CAP REQ :twitch.tv/tags");
 }
 
 CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
@@ -74,6 +65,18 @@ CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
 
 	if(sLine.Left(9).Equals("JTVCLIENT"))
 		return CModule::HALT;
+
+	return CModule::CONTINUE;
+}
+
+CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
+{
+	if(msg.GetCommand().Equals("WHISPER"))
+		msg.SetCommand("PRIVMSG");
+
+	CString realNick = msg.GetTag("display-name").Trim_n();
+	if(realNick != "")
+		msg.GetNick().SetNick(realNick);
 
 	return CModule::CONTINUE;
 }
@@ -128,42 +131,17 @@ CModule::EModRet TwitchTMI::OnChanMessage(CTextMessage &Message)
 		lastFrankerZ = std::time(nullptr);
 	}
 
-	CString realNick = Message.GetTag("display-name").Trim_n();
-
-	if(realNick != "")
-	{
-		Message.GetNick().SetNick(realNick);
-	}
-
-	return CModule::CONTINUE;
-}
-
-CModule::EModRet TwitchTMI::OnChanActionMessage(CActionMessage &Message)
-{
-	CString realNick = Message.GetTag("display-name").Trim_n();
-
-	if(realNick != "")
-	{
-		Message.GetNick().SetNick(realNick);
-	}
-
 	return CModule::CONTINUE;
 }
 
 bool TwitchTMI::OnServerCapAvailable(const CString &sCap)
 {
 	if(sCap == "twitch.tv/membership")
-	{
-		CUtils::PrintMessage("TwitchTMI: Requesting twitch.tv/membership cap");
 		return true;
-	}
 	else if(sCap == "twitch.tv/tags")
-	{
-		CUtils::PrintMessage("TwitchTMI: Requesting twitch.tv/tags cap");
 		return true;
-	}
-
-	CUtils::PrintMessage(CString("TwitchTMI: Not requesting ") + sCap + " cap");
+	else if(sCap == "twitch.tv/commands")
+		return true;
 
 	return false;
 }
@@ -173,32 +151,11 @@ CModule::EModRet TwitchTMI::OnUserTextMessage(CTextMessage &msg)
 	if(msg.GetTarget().Left(1).Equals("#"))
 		return CModule::CONTINUE;
 
-	CIRCNetwork *twnw = GetTwitchGroupNetwork();
-	if(!twnw)
-		return CModule::CONTINUE;
-
 	msg.SetText(msg.GetText().insert(0, " ").insert(0, msg.GetTarget()).insert(0, "/w "));
 	msg.SetTarget("#jtv");
 
-	twnw->PutIRC(msg.ToString());
-
 	return CModule::HALT;
 }
-
-CIRCNetwork *TwitchTMI::GetTwitchGroupNetwork()
-{
-	for(CIRCNetwork *nw: GetUser()->GetNetworks())
-	{
-		for(CModule *mod: nw->GetModules())
-		{
-			if(mod->GetModName() == "twitch_group")
-				return nw;
-		}
-	}
-
-	return nullptr;
-}
-
 
 
 TwitchTMIUpdateTimer::TwitchTMIUpdateTimer(TwitchTMI *tmod)

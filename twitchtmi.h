@@ -21,18 +21,15 @@ class TwitchTMI : public CModule
 	bool OnLoad(const CString &sArgsi, CString &sMessage) override;
 	bool OnBoot() override;
 
-	void OnIRCConnected() override;
-
 	CModule::EModRet OnUserRaw(CString &sLine) override;
+	CModule::EModRet OnRawMessage(CMessage &msg) override;
 	CModule::EModRet OnUserJoin(CString &sChannel, CString &sKey) override;
 	CModule::EModRet OnPrivMessage(CTextMessage &Message) override;
 	CModule::EModRet OnChanMessage(CTextMessage &Message) override;
-	CModule::EModRet OnChanActionMessage(CActionMessage &Message) override;
 	CModule::EModRet OnUserTextMessage(CTextMessage &msg) override;
 	bool OnServerCapAvailable(const CString &sCap) override;
 
 	private:
-	CIRCNetwork *GetTwitchGroupNetwork();
 	void PutUserChanMessage(CChan *chan, const CString &format, const CString &text);
 
 	private:
