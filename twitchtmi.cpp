@@ -154,7 +154,7 @@ CModule::EModRet TwitchTMI::OnUserTextMessage(CTextMessage &msg)
 	msg.SetText(msg.GetText().insert(0, " ").insert(0, msg.GetTarget()).insert(0, "/w "));
 	msg.SetTarget("#jtv");
 
-	return CModule::HALT;
+	return CModule::CONTINUE;
 }
 
 
