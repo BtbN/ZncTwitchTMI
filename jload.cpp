@@ -36,25 +36,20 @@ std::string getUrl(const char *url, const char* extraHeader)
 
 	struct curl_slist *hlist = nullptr;
 
+	hlist = curl_slist_append(hlist, "Client-ID: deh0rnosabytmgde2jtn13k8mo899ye");
+
 	if(extraHeader)
-	{
 		hlist = curl_slist_append(hlist, extraHeader);
-		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hlist);
-	}
+
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hlist);
 
 	res = curl_easy_perform(curl);
 
-	if(hlist)
-	{
-		curl_slist_free_all(hlist);
-	}
-
+	curl_slist_free_all(hlist);
 	curl_easy_cleanup(curl);
 
 	if(res != CURLE_OK)
-	{
 		resStr.clear();
-	}
 
 	return resStr;
 }
