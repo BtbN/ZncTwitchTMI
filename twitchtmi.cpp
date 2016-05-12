@@ -71,8 +71,42 @@ CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
 
 CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 {
-	if(msg.GetCommand().Equals("WHISPER"))
+	if(msg.GetCommand().Equals("HOSTTARGET"))
+	{
+		return CModule::HALT;
+	}
+	else if(msg.GetCommand().Equals("CLEARCHAT"))
+	{
+		msg.SetCommand("NOTICE");
+		if(msg.GetParam(1) != "")
+		{
+			msg.SetParam(1, msg.GetParam(1) + " was timed out.");
+		}
+		else
+		{
+			msg.SetParam(1, "Chat was cleared by a moderator.");
+		}
+	}
+	else if(msg.GetCommand().Equals("USERSTATE"))
+	{
+		return CModule::HALT;
+	}
+	else if(msg.GetCommand().Equals("ROOMSTATE"))
+	{
+		return CModule::HALT;
+	}
+	else if(msg.GetCommand().Equals("RECONNECT"))
+	{
+		return CModule::HALT;
+	}
+	else if(msg.GetCommand().Equals("GLOBALUSERSTATE"))
+	{
+		return CModule::HALT;
+	}
+	else if(msg.GetCommand().Equals("WHISPER"))
+	{
 		msg.SetCommand("PRIVMSG");
+	}
 
 	CString realNick = msg.GetTag("display-name").Trim_n();
 	if(realNick != "")
