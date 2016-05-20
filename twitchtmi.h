@@ -21,6 +21,8 @@ class TwitchTMI : public CModule
 	bool OnLoad(const CString &sArgsi, CString &sMessage) override;
 	bool OnBoot() override;
 
+	void OnIRCConnected() override;
+
 	CModule::EModRet OnUserRaw(CString &sLine) override;
 	CModule::EModRet OnRawMessage(CMessage &msg) override;
 	CModule::EModRet OnUserJoin(CString &sChannel, CString &sKey) override;

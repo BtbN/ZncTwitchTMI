@@ -39,6 +39,10 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 	if(GetArgs().Token(0) != "FrankerZ")
 		lastFrankerZ = std::numeric_limits<decltype(lastFrankerZ)>::max();
 
+	PutIRC("CAP REQ :twitch.tv/membership");
+	PutIRC("CAP REQ :twitch.tv/commands");
+	PutIRC("CAP REQ :twitch.tv/tags");
+
 	return true;
 }
 
@@ -50,6 +54,13 @@ bool TwitchTMI::OnBoot()
 	AddTimer(timer);
 
 	return true;
+}
+
+void TwitchTMI::OnIRCConnected()
+{
+	PutIRC("CAP REQ :twitch.tv/membership");
+	PutIRC("CAP REQ :twitch.tv/commands");
+	PutIRC("CAP REQ :twitch.tv/tags");
 }
 
 CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
