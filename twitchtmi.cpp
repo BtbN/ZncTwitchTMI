@@ -118,6 +118,12 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 	{
 		msg.SetCommand("PRIVMSG");
 	}
+	else if(msg.GetCommand().Equals("USERNOTICE"))
+	{
+		//TODO: Translate Tags to useful message
+		msg.SetCommand("PRIVMSG");
+		msg.SetParam(1, "<<<RESUB>>> " + msg.GetParam(1));
+	}
 
 	CString realNick = msg.GetTag("display-name").Trim_n();
 	if(realNick != "")
