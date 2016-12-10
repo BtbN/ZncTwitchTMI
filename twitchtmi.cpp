@@ -237,8 +237,8 @@ void TwitchTMIJob::runThread()
 	CString url = ss.str();
 	CString url2 = ss2.str();
 
-	Json::Value root = getJsonFromUrl(url.c_str(), "Accept: application/vnd.twitchtv.v5+json");
-	Json::Value root2 = getJsonFromUrl(url2.c_str(), "Accept: application/vnd.twitchtv.v5+json");
+	Json::Value root = getJsonFromUrl(url.c_str(), "Accept: application/vnd.twitchtv.v3+json");
+	Json::Value root2 = getJsonFromUrl(url2.c_str(), "Accept: application/vnd.twitchtv.v3+json");
 
 	if(!root.isNull())
 	{
