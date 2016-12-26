@@ -26,8 +26,8 @@ class TwitchTMI : public CModule
 	CModule::EModRet OnUserRaw(CString &sLine) override;
 	CModule::EModRet OnRawMessage(CMessage &msg) override;
 	CModule::EModRet OnUserJoin(CString &sChannel, CString &sKey) override;
-	CModule::EModRet OnPrivMessage(CTextMessage &Message) override;
-	CModule::EModRet OnChanMessage(CTextMessage &Message) override;
+	CModule::EModRet OnPrivTextMessage(CTextMessage &Message) override;
+	CModule::EModRet OnChanTextMessage(CTextMessage &Message) override;
 	CModule::EModRet OnUserTextMessage(CTextMessage &msg) override;
 	bool OnServerCapAvailable(const CString &sCap) override;
 

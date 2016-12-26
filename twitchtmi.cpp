@@ -140,7 +140,7 @@ CModule::EModRet TwitchTMI::OnUserJoin(CString& sChannel, CString& sKey)
 	return CModule::CONTINUE;
 }
 
-CModule::EModRet TwitchTMI::OnPrivMessage(CTextMessage &Message)
+CModule::EModRet TwitchTMI::OnPrivTextMessage(CTextMessage &Message)
 {
 	if(Message.GetNick().GetNick().Equals("jtv"))
 		return CModule::HALT;
@@ -160,7 +160,7 @@ void TwitchTMI::PutUserChanMessage(CChan *chan, const CString &from, const CStri
 		chan->AddBuffer(s + "{text}", msg);
 }
 
-CModule::EModRet TwitchTMI::OnChanMessage(CTextMessage &Message)
+CModule::EModRet TwitchTMI::OnChanTextMessage(CTextMessage &Message)
 {
 	if(Message.GetNick().GetNick().Equals("jtv"))
 		return CModule::HALT;
