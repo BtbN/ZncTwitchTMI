@@ -5,7 +5,9 @@
 
 #include <unordered_set>
 #include <functional>
+#include <vector>
 #include <ctime>
+#include <list>
 
 class TwitchTMIUpdateTimer;
 
@@ -57,16 +59,16 @@ class TwitchTMIUpdateTimer : public CTimer
 class TwitchTMIJob : public CJob
 {
 	public:
-	TwitchTMIJob(TwitchTMI *mod, const CString &channel):mod(mod),channel(channel),live(false) {}
+	TwitchTMIJob(TwitchTMI *mod, const std::list<CString> &channels):mod(mod),channels(channels) {}
 
 	void runThread() override;
 	void runMain() override;
 
 	private:
 	TwitchTMI *mod;
-	CString channel;
-	CString title;
-	bool live;
+	std::list<CString> channels;
+	std::vector<CString> titles;
+	std::vector<bool> lives;
 };
 
 class GenericJob : public CJob

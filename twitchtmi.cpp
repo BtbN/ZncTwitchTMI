@@ -7,6 +7,7 @@
 #include <znc/IRCSock.h>
 #include <znc/version.h>
 
+#include <mutex>
 #include <limits>
 
 #include "twitchtmi.h"
@@ -27,13 +28,15 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 
 	if(GetNetwork())
 	{
+		std::list<CString> channels;
+
 		for(CChan *ch: GetNetwork()->GetChans())
 		{
 			ch->SetTopic(CString());
-
-			CString chname = ch->GetName().substr(1);
-			CThreadPool::Get().addJob(new TwitchTMIJob(this, chname));
+			channels.push_back(ch->GetName().substr(1));
 		}
+
+		CThreadPool::Get().addJob(new TwitchTMIJob(this, channels));
 	}
 
 	if(GetArgs().Token(0) != "FrankerZ")
@@ -134,9 +137,6 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 
 CModule::EModRet TwitchTMI::OnUserJoin(CString& sChannel, CString& sKey)
 {
-	CString chname = sChannel.substr(1);
-	CThreadPool::Get().addJob(new TwitchTMIJob(this, chname));
-
 	return CModule::CONTINUE;
 }
 
@@ -220,89 +220,112 @@ void TwitchTMIUpdateTimer::RunJob()
 	if(!mod->GetNetwork())
 		return;
 
+	std::list<CString> channels;
+
 	for(CChan *chan: mod->GetNetwork()->GetChans())
 	{
-		CString chname = chan->GetName().substr(1);
-		CThreadPool::Get().addJob(new TwitchTMIJob(mod, chname));
+		channels.push_back(chan->GetName().substr(1));
 	}
+
+	CThreadPool::Get().addJob(new TwitchTMIJob(mod, channels));
 }
 
+static std::mutex job_thread_lock;
 
 void TwitchTMIJob::runThread()
 {
-	std::stringstream ss, ss2;
-	ss << "https://api.twitch.tv/kraken/channels/" << channel;
-	ss2 << "https://api.twitch.tv/kraken/streams/" << channel;
+	std::unique_lock<std::mutex> lock_guard(job_thread_lock, std::try_to_lock);
 
-	CString url = ss.str();
-	CString url2 = ss2.str();
-
-	Json::Value root = getJsonFromUrl(url.c_str(), "Accept: application/vnd.twitchtv.v3+json");
-	Json::Value root2 = getJsonFromUrl(url2.c_str(), "Accept: application/vnd.twitchtv.v3+json");
-
-	if(!root.isNull())
+	if(!lock_guard.owns_lock())
 	{
-		Json::Value &titleVal = root["status"];
-		title = CString();
+		channels.clear();
+		return;
+	}
 
-		if(!titleVal.isString())
-			titleVal = root["title"];
+	titles.resize(channels.size());
+	lives.resize(channels.size());
 
-		if(titleVal.isString())
+	int i = -1;
+	for(const CString &channel: channels)
+	{
+		i++;
+
+		std::stringstream ss, ss2;
+		ss << "https://api.twitch.tv/kraken/channels/" << channel;
+		ss2 << "https://api.twitch.tv/kraken/streams/" << channel;
+
+		CString url = ss.str();
+		CString url2 = ss2.str();
+
+		Json::Value root = getJsonFromUrl(url.c_str(), "Accept: application/vnd.twitchtv.v3+json");
+		Json::Value root2 = getJsonFromUrl(url2.c_str(), "Accept: application/vnd.twitchtv.v3+json");
+
+		if(!root.isNull())
 		{
-			title = titleVal.asString();
-			title.Trim();
+			Json::Value &titleVal = root["status"];
+			titles[i] = CString();
+
+			if(!titleVal.isString())
+				titleVal = root["title"];
+
+			if(titleVal.isString())
+			{
+				titles[i] = titleVal.asString();
+				titles[i].Trim();
+			}
 		}
-	}
 
-	live = false;
+		lives[i] = false;
 
-	if(!root2.isNull())
-	{
-		Json::Value &streamVal = root2["stream"];
+		if(!root2.isNull())
+		{
+			Json::Value &streamVal = root2["stream"];
 
-		if(!streamVal.isNull())
-			live = true;
-	}
+			if(!streamVal.isNull())
+				lives[i] = true;
+		}
+    }
 }
 
 void TwitchTMIJob::runMain()
 {
-	if(title.empty())
-		return;
-
-	CChan *chan = mod->GetNetwork()->FindChan(CString("#") + channel);
-
-	if(!chan)
-		return;
-
-	if(chan->GetTopic() != title)
+	int i = -1;
+	for(const CString &channel: channels)
 	{
-		chan->SetTopic(title);
-		chan->SetTopicOwner("jtv");
-		chan->SetTopicDate((unsigned long)time(nullptr));
+		i++;
 
-		std::stringstream ss;
-		ss << ":jtv TOPIC #" << channel << " :" << title;
+		CChan *chan = mod->GetNetwork()->FindChan(CString("#") + channel);
+		if(!chan)
+			continue;
 
-		mod->PutUser(ss.str());
-	}
-
-	auto it = mod->liveChannels.find(channel);
-	if(it != mod->liveChannels.end())
-	{
-		if(!live)
+		if(!titles[i].empty() && chan->GetTopic() != titles[i])
 		{
-			mod->liveChannels.erase(it);
-			mod->PutUserChanMessage(chan, "jtv", ">>> Channel just went offline! <<<");
+			chan->SetTopic(titles[i]);
+			chan->SetTopicOwner("jtv");
+			chan->SetTopicDate((unsigned long)time(nullptr));
+
+			std::stringstream ss;
+			ss << ":jtv TOPIC #" << channel << " :" << titles[i];
+
+			mod->PutUser(ss.str());
 		}
-	}
-	else
-	{
-		if(live)
+
+		auto it = mod->liveChannels.find(channel);
+		if(it != mod->liveChannels.end())
 		{
-			mod->liveChannels.insert(channel);
-			mod->PutUserChanMessage(chan, "jtv", ">>> Channel just went live! <<<");
+			if(!lives[i])
+			{
+				mod->liveChannels.erase(it);
+				mod->PutUserChanMessage(chan, "jtv", ">>> Channel just went offline! <<<");
+			}
+		}
+		else
+		{
+			if(lives[i])
+			{
+				mod->liveChannels.insert(channel);
+				mod->PutUserChanMessage(chan, "jtv", ">>> Channel just went live! <<<");
+			}
 		}
 	}
 }
