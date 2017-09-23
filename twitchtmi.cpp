@@ -32,8 +32,12 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 
 		for(CChan *ch: GetNetwork()->GetChans())
 		{
-			ch->SetTopic(CString());
-			channels.push_back(ch->GetName().substr(1));
+			CString sname = ch->GetName().substr(1);
+			channels.push_back(sname);
+
+			ch->SetTopic(GetNV("tmi_topic_" + sname));
+			ch->SetTopicOwner("jtv");
+			ch->SetTopicDate(GetNV("tmi_topic_time_" + sname).ToULong());
 		}
 
 		CThreadPool::Get().addJob(new TwitchTMIJob(this, channels));
@@ -300,14 +304,18 @@ void TwitchTMIJob::runMain()
 
 		if(!titles[i].empty() && chan->GetTopic() != titles[i])
 		{
+			unsigned long topic_time = (unsigned long)time(nullptr);
 			chan->SetTopic(titles[i]);
 			chan->SetTopicOwner("jtv");
-			chan->SetTopicDate((unsigned long)time(nullptr));
+			chan->SetTopicDate(topic_time);
 
 			std::stringstream ss;
 			ss << ":jtv TOPIC #" << channel << " :" << titles[i];
 
 			mod->PutUser(ss.str());
+
+			mod->SetNV("tmi_topic_" + channel, titles[i], true);
+			mod->SetNV("tmi_topic_time_" + channel, CString(topic_time), true);
 		}
 
 		auto it = mod->liveChannels.find(channel);
