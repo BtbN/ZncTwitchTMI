@@ -169,12 +169,15 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 				new_msg = realNick + " is new here, saying: " + txt;
 		}
 
-		realNick = "jtv";
+		realNick = "ttv";
 		msg.SetCommand("PRIVMSG");
 		msg.SetParam(1, new_msg);
 	}
 
 	msg.GetNick().SetNick(realNick);
+
+	if(realNick == "ttv")
+		msg.GetNick().Parse("ttv!ttv@ttv.tmi.twitch.tv");
 
 	return CModule::CONTINUE;
 }
