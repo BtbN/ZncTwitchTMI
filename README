@@ -5,10 +5,3 @@ you might have to use a diffrent SSL backend for libcurl, as the default openssl
 based one conflicts with znc itself using openssl.
 On Debian-Based distributions, just install for example libcurl3-nss
 
-
-Whispers:
-
-To use whispers, add one of Twitchs group chat servers as a seperate network to ZNC
-and load the twitch_group module on that Network.
-Whispers will be forwarded between the main Twitch network(The one where the twitch
-module is loaded) and the group chat network(The one with twitch_group loaded).
