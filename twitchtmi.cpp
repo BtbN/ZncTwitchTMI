@@ -89,6 +89,10 @@ CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
 
 CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 {
+	CString realNick = msg.GetTag("display-name").Trim_n();
+	if (realNick == "")
+		realNick = msg.GetNick().GetNick();
+
 	if(msg.GetCommand().Equals("HOSTTARGET"))
 	{
 		return CModule::HALT;
@@ -127,14 +131,50 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 	}
 	else if(msg.GetCommand().Equals("USERNOTICE"))
 	{
-		//TODO: Translate Tags to useful message
+		CString msg_id = msg.GetTag("msg-id");
+		CString new_msg = "<unknown usernotice " + msg_id + "> from " + realNick;
+		if(msg_id == "sub" || msg_id == "resub") {
+			CString dur = msg.GetTag("msg-param-months");
+			CString plan = msg.GetTag("msg-param-sub-plan-name");
+			CString txt = msg.GetParam(1).Trim_n();
+
+			new_msg = realNick + " just ";
+			if(msg_id == "sub")
+				new_msg += "subscribed with a " + plan + " sub";
+			else
+				new_msg += "resubscribed with a " + plan + " sub for " + dur + " months";
+
+			if(txt != "")
+				new_msg += " saying: " + txt;
+			else
+				new_msg += "!";
+
+			realNick = "jtv";
+		} else if(msg_id == "subgift") {
+			CString rec = msg.GetTag("msg-param-recipient-display-name");
+			CString plan = msg.GetTag("msg-param-sub-plan-name");
+
+			new_msg = realNick + " gifted a " + plan + " sub to " + rec + "!";
+		} else if(msg_id == "raid") {
+			CString cnt = msg.GetTag("msg-param-viewerCount");
+			CString src = msg.GetTag("msg-param-displayName");
+
+			new_msg = src + " is raiding with a party of " + cnt + "!";
+		} else if(msg_id == "ritual") {
+			CString rit = msg.GetTag("msg-param-ritual-name");
+			CString txt = msg.GetParam(1).Trim_n();
+
+			new_msg = "<unknown ritual " + rit + ">";
+			if(rit == "new_chatter")
+				new_msg = realNick + " is new here, saying: " + txt;
+		}
+
+		realNick = "jtv";
 		msg.SetCommand("PRIVMSG");
-		msg.SetParam(1, "<<<RESUB>>> " + msg.GetParam(1));
+		msg.SetParam(1, new_msg);
 	}
 
-	CString realNick = msg.GetTag("display-name").Trim_n();
-	if(realNick != "")
-		msg.GetNick().SetNick(realNick);
+	msg.GetNick().SetNick(realNick);
 
 	return CModule::CONTINUE;
 }
