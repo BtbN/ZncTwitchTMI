@@ -1,4 +1,5 @@
 #include <curl/curl.h>
+#include <memory>
 
 #include "jload.h"
 
@@ -59,14 +60,15 @@ std::string getUrl(const char *url, const char* extraHeader)
 Json::Value getJsonFromUrl(const char* url, const char* extraHeader)
 {
 	Json::Value res;
-	Json::Reader reader;
+	Json::CharReaderBuilder rb;
+	std::unique_ptr<Json::CharReader> reader(rb.newCharReader());
 
 	std::string data = getUrl(url, extraHeader);
 
 	if(data.empty())
 		return res;
 
-	bool ok = reader.parse(data, res);
+	bool ok = reader->parse(data.c_str(), data.c_str() + data.size(), &res, nullptr);
 
 	if(!ok)
 		return Json::Value();
