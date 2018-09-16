@@ -172,6 +172,7 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 		}
 
 		realNick = "ttv";
+		new_msg = ">>> " + new_msg + " <<<";
 		msg.SetCommand("PRIVMSG");
 		msg.SetParam(1, new_msg);
 	}
