@@ -167,6 +167,8 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 			new_msg = "<unknown ritual " + rit + ">";
 			if(rit == "new_chatter")
 				new_msg = realNick + " is new here, saying: " + txt;
+		} else if(msg_id == "giftpaidupgrade") {
+			new_msg = msg.GetTag("system_msg");
 		}
 
 		realNick = "ttv";
