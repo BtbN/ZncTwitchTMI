@@ -87,6 +87,19 @@ CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
 	return CModule::CONTINUE;
 }
 
+static CString subPlanToName(const CString &plan)
+{
+	if(plan.AsLower() == "prime")
+		return "Twitch Prime";
+	else if(plan == "1000")
+		return "Tier 1";
+	else if(plan == "2000")
+		return "Tier 2";
+	else if(plan == "3000");
+		return "Tier 3";
+	return plan;
+}
+
 CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 {
 	CString realNick = msg.GetTag("display-name").Trim_n();
@@ -135,17 +148,8 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 		CString new_msg = "<unknown usernotice " + msg_id + "> from " + realNick;
 		if(msg_id == "sub" || msg_id == "resub") {
 			CString dur = msg.GetTag("msg-param-months");
-			CString plan = msg.GetTag("msg-param-sub-plan").MakeLower();
+			CString plan = subPlanToName(msg.GetTag("msg-param-sub-plan"));
 			CString txt = msg.GetParam(1).Trim_n();
-
-			if(plan == "prime")
-				plan = "Twitch Prime";
-			else if(plan == "1000")
-				plan = "Tier 1";
-			else if(plan == "2000")
-				plan = "Tier 2";
-			else if(plan == "3000");
-				plan = "Tier 3";
 
 			new_msg = realNick + " just ";
 			if(msg_id == "sub")
@@ -161,7 +165,7 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 			realNick = "jtv";
 		} else if(msg_id == "subgift") {
 			CString rec = msg.GetTag("msg-param-recipient-display-name");
-			CString plan = msg.GetTag("msg-param-sub-plan-name");
+			CString plan = subPlanToName(msg.GetTag("msg-param-sub-plan"));
 
 			new_msg = realNick + " gifted a " + plan + " sub to " + rec + "!";
 		} else if(msg_id == "raid") {
