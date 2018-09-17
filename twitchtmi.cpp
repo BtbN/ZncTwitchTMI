@@ -135,8 +135,17 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 		CString new_msg = "<unknown usernotice " + msg_id + "> from " + realNick;
 		if(msg_id == "sub" || msg_id == "resub") {
 			CString dur = msg.GetTag("msg-param-months");
-			CString plan = msg.GetTag("msg-param-sub-plan-name");
+			CString plan = msg.GetTag("msg-param-sub-plan").MakeLower();
 			CString txt = msg.GetParam(1).Trim_n();
+
+			if(plan == "prime")
+				plan = "Twitch Prime";
+			else if(plan == "1000")
+				plan = "Tier 1";
+			else if(plan == "2000")
+				plan = "Tier 2";
+			else if(plan == "3000");
+				plan = "Tier 3";
 
 			new_msg = realNick + " just ";
 			if(msg_id == "sub")
