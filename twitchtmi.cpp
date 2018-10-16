@@ -70,18 +70,18 @@ void TwitchTMI::OnIRCConnected()
 	PutIRC("CAP REQ :twitch.tv/tags");
 }
 
-CModule::EModRet TwitchTMI::OnUserRaw(CString &sLine)
+CModule::EModRet TwitchTMI::OnUserRawMessage(CMessage &msg)
 {
-	if(sLine.Left(5).Equals("WHO #"))
+	if(msg.GetCommand().Equals("WHO"))
 		return CModule::HALT;
 
-	if(sLine.Left(5).Equals("AWAY "))
+	if(msg.GetCommand().Equals("AWAY"))
 		return CModule::HALT;
 
-	if(sLine.Left(12).Equals("TWITCHCLIENT"))
+	if(msg.GetCommand().Equals("TWITCHCLIENT"))
 		return CModule::HALT;
 
-	if(sLine.Left(9).Equals("JTVCLIENT"))
+	if(msg.GetCommand().Equals("JTVCLIENT"))
 		return CModule::HALT;
 
 	return CModule::CONTINUE;
