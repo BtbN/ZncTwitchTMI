@@ -72,16 +72,8 @@ void TwitchTMI::OnIRCConnected()
 
 CModule::EModRet TwitchTMI::OnUserRawMessage(CMessage &msg)
 {
-	if(msg.GetCommand().Equals("WHO"))
-		return CModule::HALT;
-
-	if(msg.GetCommand().Equals("AWAY"))
-		return CModule::HALT;
-
-	if(msg.GetCommand().Equals("TWITCHCLIENT"))
-		return CModule::HALT;
-
-	if(msg.GetCommand().Equals("JTVCLIENT"))
+	const CString &cmd = msg.GetCommand();
+	if(cmd.Equals("WHO") || cmd.Equals("AWAY") || cmd.Equals("TWITCHCLIENT") || cmd.Equals("JTVCLIENT"))
 		return CModule::HALT;
 
 	return CModule::CONTINUE;
