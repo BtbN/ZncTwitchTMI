@@ -74,7 +74,52 @@ CModule::EModRet TwitchTMI::OnUserRawMessage(CMessage &msg)
 {
 	const CString &cmd = msg.GetCommand();
 	if(cmd.Equals("WHO") || cmd.Equals("AWAY") || cmd.Equals("TWITCHCLIENT") || cmd.Equals("JTVCLIENT"))
+	{
 		return CModule::HALT;
+	}
+	else if(cmd.Equals("KICK"))
+	{
+		VCString params = msg.GetParams();
+		if(params.size() < 2)
+			return CModule::HALT;
+		msg.SetCommand("PRIVMSG");
+		params = { params[0], "/timeout " + CString(" ").Join(std::next(params.begin()), params.end()) };
+		msg.SetParams(params);
+	}
+	else if(cmd.Equals("MODE"))
+	{
+		VCString params = msg.GetParams();
+		if(params.size() != 3)
+			return CModule::HALT;
+
+		CString victim, mode = params[1];
+
+		CNick victimNick;
+		victimNick.Parse(params[2]);
+
+		if(mode.Equals("+b"))
+			mode = "/ban";
+		else if(mode.Equals("-b"))
+			mode = "/unban";
+		else if(mode.Equals("+o"))
+			mode = "/mod";
+		else if(mode.Equals("-o"))
+			mode = "/unmod";
+		else
+		{
+			PutStatus("Unknown mode change: " + mode);
+			return CModule::HALT;
+		}
+
+		if(victimNick.GetHost().Contains(".tmi.twitch.tv"))
+			victim = victimNick.GetHost().Token(0, false, ".");
+		else
+			victim = victimNick.GetNick();
+
+		msg.SetCommand("PRIVMSG");
+		params = { params[0], mode + " " + victim };
+		msg.SetParams(params);
+	}
 
 	return CModule::CONTINUE;
 }
