@@ -228,6 +228,9 @@ CModule::EModRet TwitchTMI::OnChanTextMessage(CTextMessage &Message)
 	if(Message.GetNick().GetNick().Equals("jtv"))
 		return CModule::HALT;
 
+	if(Message.GetNick().GetNick().AsLower().Equals("hentaitheace"))
+		return CModule::CONTINUE;
+
 	if(Message.GetText() == "FrankerZ" && std::time(nullptr) - lastFrankerZ > 10)
 	{
 		std::stringstream ss;
