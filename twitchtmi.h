@@ -58,10 +58,13 @@ class TwitchTMIUpdateTimer : public CTimer
 	TwitchTMI *mod;
 };
 
-class TwitchTMIJob : public CJob
+class TwitchTMIJob : public CModuleJob
 {
 	public:
-	TwitchTMIJob(TwitchTMI *mod, const std::list<CString> &channels):mod(mod),channels(channels) {}
+	TwitchTMIJob(TwitchTMI *mod, const std::list<CString> &channels)
+		:CModuleJob(mod, "twitch_updates", "fetches updates from twitch")
+		,mod(mod)
+		,channels(channels) {}
 
 	void runThread() override;
 	void runMain() override;
@@ -73,10 +76,12 @@ class TwitchTMIJob : public CJob
 	std::vector<bool> lives;
 };
 
-class GenericJob : public CJob
+class GenericJob : public CModuleJob
 {
 	public:
-	GenericJob(std::function<void()> threadFunc, std::function<void()> mainFunc):threadFunc(threadFunc),mainFunc(mainFunc) {}
+	GenericJob(CModule* mod, const CString& name, const CString& desc, std::function<void()> threadFunc, std::function<void()> mainFunc)
+		:CModuleJob(mod, name, desc)
+		,threadFunc(threadFunc),mainFunc(mainFunc) {}
 
 	void runThread() override { threadFunc(); }
 	void runMain() override { mainFunc(); }
@@ -84,5 +89,19 @@ class GenericJob : public CJob
 	private:
 	std::function<void()> threadFunc;
 	std::function<void()> mainFunc;
+};
+
+class GenericTimer : public CTimer
+{
+	public:
+	GenericTimer(CModule* mod, unsigned int interval, unsigned int cycles, const CString& label, const CString& desc, std::function<void()> runFunc)
+		:CTimer(mod, interval, cycles, label, desc)
+		,runFunc(runFunc) {}
+
+	protected:
+	void RunJob() override { runFunc(); }
+
+	private:
+	std::function<void()> runFunc;
 };
 

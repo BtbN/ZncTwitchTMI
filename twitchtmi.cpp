@@ -269,7 +269,7 @@ void TwitchTMI::InjectMessageHelper(CTextMessage &Message, const CString &action
 	ss << "PRIVMSG " << chan->GetName() << " :" << action;
 	PutIRC(ss.str());
 
-	CThreadPool::Get().addJob(new GenericJob([]() {}, [this, chan, mynick, action]()
+	AddJob(new GenericJob(this, "put_msg_job_" + chan->GetName(), "put msg helper", []() {}, [this, chan, mynick, action]()
 	{
 		PutUserChanMessage(chan, mynick, action);
 	}));
@@ -339,7 +339,7 @@ void TwitchTMIUpdateTimer::RunJob()
 		channels.push_back(chan->GetName().substr(1));
 	}
 
-	CThreadPool::Get().addJob(new TwitchTMIJob(mod, channels));
+	mod->AddJob(new TwitchTMIJob(mod, channels));
 }
 
 static std::mutex job_thread_lock;
