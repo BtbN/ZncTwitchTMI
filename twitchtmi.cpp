@@ -260,11 +260,10 @@ void TwitchTMI::PutUserChanMessage(CChan *chan, const CString &from, const CStri
 		chan->AddBuffer(s + "{text}", msg);
 }
 
-void TwitchTMI::InjectMessageHelper(CTextMessage &Message, const CString &action)
+void TwitchTMI::InjectMessageHelper(CChan *chan, const CString &action)
 {
 	std::stringstream ss;
 	CString mynick = GetNetwork()->GetIRCNick().GetNickMask();
-	CChan *chan = Message.GetChan();
 
 	ss << "PRIVMSG " << chan->GetName() << " :" << action;
 	PutIRC(ss.str());
@@ -283,14 +282,19 @@ CModule::EModRet TwitchTMI::OnChanTextMessage(CTextMessage &Message)
 	if(Message.GetNick().GetNick().AsLower().Equals("hentaitheace"))
 		return CModule::CONTINUE;
 
+	CChan *chan = Message.GetChan();
+
 	if(Message.GetText() == "FrankerZ" && std::time(nullptr) - lastFrankerZ > 10)
 	{
-		InjectMessageHelper(Message, "FrankerZ");
+		InjectMessageHelper(chan, "FrankerZ");
 		lastFrankerZ = std::time(nullptr);
 	}
-	else if(Message.GetText() == "!play" && std::time(nullptr) - lastPlay > 120)
+	else if(Message.GetText() == "!play" && std::time(nullptr) - lastPlay > 135)
 	{
-		InjectMessageHelper(Message, "!play");
+		AddTimer(new GenericTimer(this, 15, 1, "play_timer_" + chan->GetName(), "Writes !play in 15 sec!", [this, chan]()
+		{
+			InjectMessageHelper(chan, "!play");
+		}));
 		lastPlay = std::time(nullptr);
 	}
 
