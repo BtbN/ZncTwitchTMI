@@ -382,6 +382,7 @@ void TwitchTMIJob::runThread()
 		if(!root.isNull())
 		{
 			Json::Value &titleVal = root["status"];
+			Json::Value &gameVal = root["game"];
 			titles[i] = CString();
 
 			if(!titleVal.isString())
@@ -392,6 +393,9 @@ void TwitchTMIJob::runThread()
 				titles[i] = titleVal.asString();
 				titles[i].Trim();
 			}
+
+			if(gameVal.isString() && gameVal.asString() != "")
+				titles[i] += " (" + CString(gameVal.asString()).Trim_n() + ")";
 		}
 
 		lives[i] = false;
@@ -403,7 +407,7 @@ void TwitchTMIJob::runThread()
 			if(!streamVal.isNull())
 				lives[i] = true;
 		}
-    }
+	}
 }
 
 void TwitchTMIJob::runMain()
