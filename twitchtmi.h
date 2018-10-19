@@ -17,7 +17,7 @@ class TwitchTMI : public CModule
 	friend class TwitchTMIJob;
 
 	public:
-	MODCONSTRUCTOR(TwitchTMI) { lastFrankerZ = 0; }
+	MODCONSTRUCTOR(TwitchTMI) { lastFrankerZ = 0; lastPlay = 0; }
 	virtual ~TwitchTMI();
 
 	bool OnLoad(const CString &sArgsi, CString &sMessage) override;
@@ -34,11 +34,13 @@ class TwitchTMI : public CModule
 	bool OnServerCapAvailable(const CString &sCap) override;
 
 	private:
+	void InjectMessageHelper(CTextMessage &Message, const CString &action);
 	void PutUserChanMessage(CChan *chan, const CString &format, const CString &text);
 
 	private:
 	TwitchTMIUpdateTimer *timer;
 	std::time_t lastFrankerZ;
+	std::time_t lastPlay;
 	std::unordered_set<CString> liveChannels;
 };
 

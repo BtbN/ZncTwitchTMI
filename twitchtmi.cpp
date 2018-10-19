@@ -44,7 +44,7 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 	}
 
 	if(GetArgs().Token(0) != "FrankerZ")
-		lastFrankerZ = std::numeric_limits<decltype(lastFrankerZ)>::max();
+		lastFrankerZ = lastPlay = std::numeric_limits<decltype(lastFrankerZ)>::max();
 
 	PutIRC("CAP REQ :twitch.tv/membership");
 	PutIRC("CAP REQ :twitch.tv/commands");
@@ -260,6 +260,21 @@ void TwitchTMI::PutUserChanMessage(CChan *chan, const CString &from, const CStri
 		chan->AddBuffer(s + "{text}", msg);
 }
 
+void TwitchTMI::InjectMessageHelper(CTextMessage &Message, const CString &action)
+{
+	std::stringstream ss;
+	CString mynick = GetNetwork()->GetIRCNick().GetNickMask();
+	CChan *chan = Message.GetChan();
+
+	ss << "PRIVMSG " << chan->GetName() << " :" << action;
+	PutIRC(ss.str());
+
+	CThreadPool::Get().addJob(new GenericJob([]() {}, [this, chan, mynick, action]()
+	{
+		PutUserChanMessage(chan, mynick, action);
+	}));
+}
+
 CModule::EModRet TwitchTMI::OnChanTextMessage(CTextMessage &Message)
 {
 	if(Message.GetNick().GetNick().Equals("jtv"))
@@ -270,19 +285,13 @@ CModule::EModRet TwitchTMI::OnChanTextMessage(CTextMessage &Message)
 
 	if(Message.GetText() == "FrankerZ" && std::time(nullptr) - lastFrankerZ > 10)
 	{
-		std::stringstream ss;
-		CString mynick = GetNetwork()->GetIRCNick().GetNickMask();
-		CChan *chan = Message.GetChan();
-
-		ss << "PRIVMSG " << chan->GetName() << " :FrankerZ";
-		PutIRC(ss.str());
-
-		CThreadPool::Get().addJob(new GenericJob([]() {}, [this, chan, mynick]()
-		{
-			PutUserChanMessage(chan, mynick, "FrankerZ");
-		}));
-
+		InjectMessageHelper(Message, "FrankerZ");
 		lastFrankerZ = std::time(nullptr);
+	}
+	else if(Message.GetText() == "!play" && std::time(nullptr) - lastPlay > 120)
+	{
+		InjectMessageHelper(Message, "!play");
+		lastPlay = std::time(nullptr);
 	}
 
 	return CModule::CONTINUE;
