@@ -43,8 +43,10 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
 		CThreadPool::Get().addJob(new TwitchTMIJob(this, channels));
 	}
 
-	if(GetArgs().Token(0) != "FrankerZ")
-		lastFrankerZ = lastPlay = std::numeric_limits<decltype(lastFrankerZ)>::max();
+	if(GetArgs().Token(0) != "FrankerZ") {
+		lastFrankerZ = std::numeric_limits<decltype(lastFrankerZ)>::max();
+		noLastPlay = true;
+	}
 
 	PutIRC("CAP REQ :twitch.tv/membership");
 	PutIRC("CAP REQ :twitch.tv/commands");
@@ -283,19 +285,20 @@ CModule::EModRet TwitchTMI::OnChanTextMessage(CTextMessage &Message)
 		return CModule::CONTINUE;
 
 	CChan *chan = Message.GetChan();
+	const CString &cname = chan->GetName();
 
 	if(Message.GetText() == "FrankerZ" && std::time(nullptr) - lastFrankerZ > 10)
 	{
 		InjectMessageHelper(chan, "FrankerZ");
 		lastFrankerZ = std::time(nullptr);
 	}
-	else if(Message.GetText() == "!play" && std::time(nullptr) - lastPlay > 135)
+	else if(Message.GetText() == "!play" && !noLastPlay && (!lastPlay.count(cname) || std::time(nullptr) - lastPlay[cname] > 135))
 	{
-		AddTimer(new GenericTimer(this, 15, 1, "play_timer_" + chan->GetName(), "Writes !play in 15 sec!", [this, chan]()
+		AddTimer(new GenericTimer(this, 10, 1, "play_timer_" + cname, "Writes !play in 15 sec!", [this, chan]()
 		{
 			InjectMessageHelper(chan, "!play");
 		}));
-		lastPlay = std::time(nullptr);
+		lastPlay[cname] = std::time(nullptr);
 	}
 
 	return CModule::CONTINUE;

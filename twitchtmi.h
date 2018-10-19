@@ -4,6 +4,7 @@
 #include <znc/Threads.h>
 
 #include <unordered_set>
+#include <unordered_map>
 #include <functional>
 #include <vector>
 #include <ctime>
@@ -17,7 +18,7 @@ class TwitchTMI : public CModule
 	friend class TwitchTMIJob;
 
 	public:
-	MODCONSTRUCTOR(TwitchTMI) { lastFrankerZ = 0; lastPlay = 0; }
+	MODCONSTRUCTOR(TwitchTMI) { lastFrankerZ = 0; noLastPlay = false; }
 	virtual ~TwitchTMI();
 
 	bool OnLoad(const CString &sArgsi, CString &sMessage) override;
@@ -40,7 +41,8 @@ class TwitchTMI : public CModule
 	private:
 	TwitchTMIUpdateTimer *timer;
 	std::time_t lastFrankerZ;
-	std::time_t lastPlay;
+	std::unordered_map<CString, std::time_t> lastPlay;
+	bool noLastPlay;
 	std::unordered_set<CString> liveChannels;
 };
 
