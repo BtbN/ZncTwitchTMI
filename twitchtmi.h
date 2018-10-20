@@ -74,8 +74,8 @@ class TwitchTMIJob : public CModuleJob
     private:
     TwitchTMI *mod;
     std::list<CString> channels;
-    std::vector<CString> titles;
-    std::vector<bool> lives;
+    std::unordered_map<CString, CString> titles;
+    std::unordered_map<CString, bool> lives;
 };
 
 class GenericJob : public CModuleJob

@@ -33,6 +33,7 @@ bool TwitchTMI::OnLoad(const CString& sArgsi, CString& sMessage)
         for(CChan *ch: GetNetwork()->GetChans())
         {
             CString sname = ch->GetName().substr(1);
+            sname.MakeLower();
             channels.push_back(sname);
 
             ch->SetTopic(GetNV("tmi_topic_" + sname));
@@ -350,97 +351,145 @@ void TwitchTMIUpdateTimer::RunJob()
 }
 
 static std::mutex job_thread_lock;
+static std::unordered_map<CString, CString> game_id_map;
 
 void TwitchTMIJob::runThread()
 {
     std::unique_lock<std::mutex> lock_guard(job_thread_lock, std::try_to_lock);
 
-    if(!lock_guard.owns_lock())
+    if(!lock_guard.owns_lock() || !channels.size())
     {
         channels.clear();
         return;
     }
 
-    titles.resize(channels.size());
-    lives.resize(channels.size());
+    CString url = "https://api.twitch.tv/helix/streams?first=100&user_login=" + CString("&user_login=").Join(channels.begin(), channels.end());
 
-    int i = -1;
-    for(const CString &channel: channels)
+    Json::Value root = getJsonFromUrl(url.c_str());
+    if(root.isNull())
+        return;
+
+    Json::Value data = root["data"];
+    if(!data.isArray())
+        return;
+
+    std::list<CString> new_game_ids;
+
+    for(Json::ArrayIndex i = 0; i < data.size(); i++)
     {
-        i++;
-
-        std::stringstream ss, ss2;
-        ss << "https://api.twitch.tv/kraken/channels/" << channel;
-        ss2 << "https://api.twitch.tv/kraken/streams/" << channel;
-
-        CString url = ss.str();
-        CString url2 = ss2.str();
-
-        Json::Value root = getJsonFromUrl(url.c_str(), "Accept: application/vnd.twitchtv.v3+json");
-        Json::Value root2 = getJsonFromUrl(url2.c_str(), "Accept: application/vnd.twitchtv.v3+json");
-
-        if(!root.isNull())
+        try
         {
-            Json::Value &titleVal = root["status"];
-            Json::Value &gameVal = root["game"];
-            titles[i] = CString();
+            Json::Value val = data[i];
+            if(val.isNull())
+                continue;
 
-            if(!titleVal.isString())
-                titleVal = root["title"];
+            CString gameId = val["game_id"].asString();
 
-            if(titleVal.isString())
+            if(!game_id_map.count(gameId))
+                new_game_ids.push_back(gameId);
+        } catch(const Json::Exception&) {
+            continue;
+        }
+    }
+
+    if(!new_game_ids.empty())
+    {
+        CString games_url = "https://api.twitch.tv/helix/games?id=" + CString("&id=").Join(new_game_ids.begin(), new_game_ids.end());
+        Json::Value game_root = getJsonFromUrl(games_url.c_str());
+
+        Json::Value game_data = game_root["data"];
+        if(game_data.isArray())
+        {
+            for(Json::ArrayIndex i = 0; i < game_data.size(); i++)
             {
-                titles[i] = titleVal.asString();
-                titles[i].Trim();
+                try
+                {
+                    Json::Value val = game_data[i];
+                    if(!val.isObject())
+                        continue;
+
+                    game_id_map[val["id"].asString()] = val["name"].asString();
+                } catch(const Json::Exception&) {
+                    continue;
+                }
+            }
+        }
+    }
+
+    for(Json::ArrayIndex i = 0; i < data.size(); i++)
+    {
+        try
+        {
+            Json::Value val = data[i];
+            if(!val.isObject())
+                continue;
+
+            CString channel = val["user_name"].asString();
+            CString title = val["title"].asString();
+            CString gameId = val["game_id"].asString();
+            CString type = val["type"].asString();
+
+            channel.MakeLower();
+
+            if(!gameId.Equals("") && game_id_map.count(gameId))
+                title += " [" + game_id_map[gameId] + "]";
+
+            if(!type.Equals("") && !type.Equals("live")) {
+                title += " [" + type.MakeUpper() + "]";
+                lives[channel] = false;
+            } else {
+                lives[channel] = true;
             }
 
-            if(gameVal.isString() && gameVal.asString() != "")
-                titles[i] += " (" + CString(gameVal.asString()).Trim_n() + ")";
-        }
-
-        lives[i] = false;
-
-        if(!root2.isNull())
-        {
-            Json::Value &streamVal = root2["stream"];
-
-            if(!streamVal.isNull())
-                lives[i] = true;
+            titles[channel] = title;
+        } catch(const Json::Exception&) {
+            continue;
         }
     }
 }
 
 void TwitchTMIJob::runMain()
 {
-    int i = -1;
-    for(const CString &channel: channels)
+    for(CString channel: channels)
     {
-        i++;
-
         CChan *chan = mod->GetNetwork()->FindChan(CString("#") + channel);
         if(!chan)
             continue;
+        channel.MakeLower();
 
-        if(!titles[i].empty() && chan->GetTopic() != titles[i])
+        CString title, titlePrefix;
+        if(titles.count(channel))
+        {
+            title = titles[channel];
+        }
+        else
+        {
+            title = mod->GetNV("tmi_topic_" + channel);
+            titlePrefix = "(OFFLINE) ";
+        }
+
+        CString fullTitle = titlePrefix + title;
+
+        if(!fullTitle.empty() && chan->GetTopic() != fullTitle)
         {
             unsigned long topic_time = (unsigned long)time(nullptr);
-            chan->SetTopic(titles[i]);
+            chan->SetTopic(fullTitle);
             chan->SetTopicOwner("jtv");
             chan->SetTopicDate(topic_time);
 
             std::stringstream ss;
-            ss << ":jtv TOPIC #" << channel << " :" << titles[i];
+            ss << ":jtv TOPIC #" << channel << " :" << fullTitle;
 
             mod->PutUser(ss.str());
 
-            mod->SetNV("tmi_topic_" + channel, titles[i], true);
+            mod->SetNV("tmi_topic_" + channel, title, true);
             mod->SetNV("tmi_topic_time_" + channel, CString(topic_time), true);
         }
 
         auto it = mod->liveChannels.find(channel);
         if(it != mod->liveChannels.end())
         {
-            if(!lives[i])
+            if(!lives.count(channel) || !lives[channel])
             {
                 mod->liveChannels.erase(it);
                 mod->PutUserChanMessage(chan, "jtv", ">>> Channel just went offline! <<<");
@@ -448,7 +497,7 @@ void TwitchTMIJob::runMain()
         }
         else
         {
-            if(lives[i])
+            if(lives.count(channel) && lives[channel])
             {
                 mod->liveChannels.insert(channel);
                 mod->PutUserChanMessage(chan, "jtv", ">>> Channel just went live! <<<");
