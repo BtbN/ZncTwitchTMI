@@ -330,7 +330,7 @@ CModule::EModRet TwitchTMI::OnUserTextMessage(CTextMessage &msg)
 
 
 TwitchTMIUpdateTimer::TwitchTMIUpdateTimer(TwitchTMI *tmod)
-    :CTimer(tmod, 30, 0, "TwitchTMIUpdateTimer", "Downloads Twitch information")
+    :CTimer(tmod, 10, 0, "TwitchTMIUpdateTimer", "Downloads Twitch information")
     ,mod(tmod)
 {
 }
