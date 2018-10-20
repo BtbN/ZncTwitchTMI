@@ -39,7 +39,7 @@ std::string getUrl(const char *url, const char* extraHeader)
 
     struct curl_slist *hlist = nullptr;
 
-    hlist = curl_slist_append(hlist, "Client-ID: deh0rnosabytmgde2jtn13k8mo899ye");
+    hlist = curl_slist_append(hlist, "Client-ID: jzkbprff40iqj646a697cyrvl0zt2m6");
 
     if(extraHeader)
         hlist = curl_slist_append(hlist, extraHeader);
