@@ -360,57 +360,25 @@ void TwitchTMIJob::runThread()
         return;
     }
 
-    CString url = "https://api.twitch.tv/helix/streams?first=100&user_login=" + CString("&user_login=").Join(channels.begin(), channels.end());
-
-    Json::Value root = getJsonFromUrl(url);
+    Json::Value root = getJsonFromUrl(
+        "https://api.twitch.tv/gql",
+        { "Content-Type: application/json" },
+        "{ \"variables\": { \"logins\": [\"" + CString("\", \"").Join(channels.begin(), channels.end()) + "\"] },"
+        " \"query\": \"query user_status($logins: [String!]){ users(logins: $logins) { broadcastSettings{ game{ name } title } login stream{ type } } }\" }");
     if(root.isNull())
         return;
 
-    Json::Value data = root["data"];
-    if(!data.isArray())
+    Json::Value data;
+    try
+    {
+        data = root["data"];
+        if(!data.isObject())
+            return;
+        data = data["users"];
+        if(!data.isArray())
+            return;
+    } catch(const Json::Exception&) {
         return;
-
-    std::list<CString> new_game_ids;
-
-    for(Json::ArrayIndex i = 0; i < data.size(); i++)
-    {
-        try
-        {
-            Json::Value val = data[i];
-            if(val.isNull())
-                continue;
-
-            CString gameId = val["game_id"].asString();
-
-            if(!mod->game_id_map.count(gameId))
-                new_game_ids.push_back(gameId);
-        } catch(const Json::Exception&) {
-            continue;
-        }
-    }
-
-    if(!new_game_ids.empty())
-    {
-        CString games_url = "https://api.twitch.tv/helix/games?id=" + CString("&id=").Join(new_game_ids.begin(), new_game_ids.end());
-        Json::Value game_root = getJsonFromUrl(games_url);
-
-        Json::Value game_data = game_root["data"];
-        if(game_data.isArray())
-        {
-            for(Json::ArrayIndex i = 0; i < game_data.size(); i++)
-            {
-                try
-                {
-                    Json::Value val = game_data[i];
-                    if(!val.isObject())
-                        continue;
-
-                    mod->game_id_map[val["id"].asString()] = val["name"].asString();
-                } catch(const Json::Exception&) {
-                    continue;
-                }
-            }
-        }
     }
 
     for(Json::ArrayIndex i = 0; i < data.size(); i++)
@@ -421,22 +389,27 @@ void TwitchTMIJob::runThread()
             if(!val.isObject())
                 continue;
 
-            CString channel = val["user_name"].asString();
-            CString title = val["title"].asString();
-            CString gameId = val["game_id"].asString();
-            CString type = val["type"].asString();
+            CString channel = val["login"].asString();
+            CString title = val["broadcastSettings"]["title"].asString();
+            CString type = val["stream"]["type"].asString();
+
+            CString game;
+            Json::Value gameVal = val["broadcastSettings"]["game"];
+            if(gameVal.isObject())
+                game = gameVal.get("name", "").asString();
 
             channel.MakeLower();
 
-            if(!gameId.Equals("") && mod->game_id_map.count(gameId))
-                title += " [" + mod->game_id_map[gameId] + "]";
+            if(!game.Equals(""))
+                title += " [" + game + "]";
 
-            if(!type.Equals("") && !type.Equals("live")) {
+            bool isLive = !type.Equals("");
+            lives[channel] = isLive;
+
+            if(isLive && !type.Equals("live"))
                 title += " [" + type.MakeUpper() + "]";
-                lives[channel] = false;
-            } else {
-                lives[channel] = true;
-            }
+            else if(!isLive)
+                title += " [OFFLINE]";
 
             titles[channel] = title;
         } catch(const Json::Exception&) {
@@ -454,28 +427,21 @@ void TwitchTMIJob::runMain()
             continue;
         channel.MakeLower();
 
-        CString title, titlePrefix;
+        CString title;
         if(titles.count(channel))
-        {
             title = titles[channel];
-        }
         else
-        {
             title = mod->GetNV("tmi_topic_" + channel);
-            titlePrefix = "(OFFLINE) ";
-        }
 
-        CString fullTitle = titlePrefix + title;
-
-        if(!fullTitle.empty() && chan->GetTopic() != fullTitle)
+        if(!title.empty() && chan->GetTopic() != title)
         {
             unsigned long topic_time = (unsigned long)time(nullptr);
-            chan->SetTopic(fullTitle);
+            chan->SetTopic(title);
             chan->SetTopicOwner("jtv");
             chan->SetTopicDate(topic_time);
 
             std::stringstream ss;
-            ss << ":jtv TOPIC #" << channel << " :" << fullTitle;
+            ss << ":jtv TOPIC #" << channel << " :" << title;
 
             mod->PutUser(ss.str());
 

@@ -45,7 +45,6 @@ class TwitchTMI : public CModule
     bool noLastPlay;
     std::unordered_set<CString> liveChannels;
     std::mutex job_thread_lock;
-    std::unordered_map<CString, CString> game_id_map;
 };
 
 class TwitchTMIUpdateTimer : public CTimer
