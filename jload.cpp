@@ -1,9 +1,19 @@
 #include <curl/curl.h>
 #include <memory>
+#include <sstream>
 
 #include "jload.h"
 
 static bool wasCurlInit = false;
+
+void initCurl()
+{
+    if(!wasCurlInit)
+    {
+        curl_global_init(CURL_GLOBAL_ALL);
+        wasCurlInit = true;
+    }
+}
 
 static size_t WriteCB(void *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -12,7 +22,15 @@ static size_t WriteCB(void *contents, size_t size, size_t nmemb, void *userp)
     return size * nmemb;
 }
 
-std::string getUrl(const char *url, const char* extraHeader)
+static size_t ReadCB(void *dest, size_t size, size_t nmemb, void *userp)
+{
+    std::istringstream *postSs = (std::istringstream*)userp;
+    size_t bufsize = size * nmemb;
+    postSs->read((char*)dest, bufsize);
+    return postSs->gcount();
+}
+
+std::string getUrl(const std::string &url, const std::list<std::string> &extraHeaders, const std::string &postData)
 {
     std::string resStr;
 
@@ -25,7 +43,7 @@ std::string getUrl(const char *url, const char* extraHeader)
     if(!curl)
         return resStr;
 
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
@@ -38,13 +56,19 @@ std::string getUrl(const char *url, const char* extraHeader)
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCB);
 
     struct curl_slist *hlist = nullptr;
-
     hlist = curl_slist_append(hlist, "Client-ID: jzkbprff40iqj646a697cyrvl0zt2m6");
-
-    if(extraHeader)
-        hlist = curl_slist_append(hlist, extraHeader);
-
+    for(const std::string &extraHeader: extraHeaders)
+        hlist = curl_slist_append(hlist, extraHeader.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hlist);
+
+    std::istringstream postSs(postData);
+    if (!postData.empty())
+    {
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, &ReadCB);
+        curl_easy_setopt(curl, CURLOPT_READDATA, &postSs);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)postData.size());
+    }
 
     res = curl_easy_perform(curl);
 
@@ -57,13 +81,13 @@ std::string getUrl(const char *url, const char* extraHeader)
     return resStr;
 }
 
-Json::Value getJsonFromUrl(const char* url, const char* extraHeader)
+Json::Value getJsonFromUrl(const std::string &url, const std::list<std::string> &extraHeaders, const std::string &postData)
 {
     Json::Value res;
     Json::CharReaderBuilder rb;
     std::unique_ptr<Json::CharReader> reader(rb.newCharReader());
 
-    std::string data = getUrl(url, extraHeader);
+    std::string data = getUrl(url, extraHeaders, postData);
 
     if(data.empty())
         return res;
@@ -74,13 +98,4 @@ Json::Value getJsonFromUrl(const char* url, const char* extraHeader)
         return Json::Value();
 
     return res;
-}
-
-void initCurl()
-{
-    if(!wasCurlInit)
-    {
-        curl_global_init(CURL_GLOBAL_ALL);
-        wasCurlInit = true;
-    }
 }

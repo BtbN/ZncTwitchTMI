@@ -362,7 +362,7 @@ void TwitchTMIJob::runThread()
 
     CString url = "https://api.twitch.tv/helix/streams?first=100&user_login=" + CString("&user_login=").Join(channels.begin(), channels.end());
 
-    Json::Value root = getJsonFromUrl(url.c_str());
+    Json::Value root = getJsonFromUrl(url);
     if(root.isNull())
         return;
 
@@ -392,7 +392,7 @@ void TwitchTMIJob::runThread()
     if(!new_game_ids.empty())
     {
         CString games_url = "https://api.twitch.tv/helix/games?id=" + CString("&id=").Join(new_game_ids.begin(), new_game_ids.end());
-        Json::Value game_root = getJsonFromUrl(games_url.c_str());
+        Json::Value game_root = getJsonFromUrl(games_url);
 
         Json::Value game_data = game_root["data"];
         if(game_data.isArray())
