@@ -18,7 +18,7 @@ class TwitchTMI : public CModule
     friend class TwitchTMIJob;
 
     public:
-    MODCONSTRUCTOR(TwitchTMI) { lastFrankerZ = 0; noLastPlay = false; }
+    MODCONSTRUCTOR(TwitchTMI),lastFrankerZ(0),noLastPlay(false) {}
     virtual ~TwitchTMI();
 
     bool OnLoad(const CString &sArgsi, CString &sMessage) override;
