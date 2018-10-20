@@ -350,12 +350,9 @@ void TwitchTMIUpdateTimer::RunJob()
     mod->AddJob(new TwitchTMIJob(mod, channels));
 }
 
-static std::mutex job_thread_lock;
-static std::unordered_map<CString, CString> game_id_map;
-
 void TwitchTMIJob::runThread()
 {
-    std::unique_lock<std::mutex> lock_guard(job_thread_lock, std::try_to_lock);
+    std::unique_lock<std::mutex> lock_guard(mod->job_thread_lock, std::try_to_lock);
 
     if(!lock_guard.owns_lock() || !channels.size())
     {
@@ -385,7 +382,7 @@ void TwitchTMIJob::runThread()
 
             CString gameId = val["game_id"].asString();
 
-            if(!game_id_map.count(gameId))
+            if(!mod->game_id_map.count(gameId))
                 new_game_ids.push_back(gameId);
         } catch(const Json::Exception&) {
             continue;
@@ -408,7 +405,7 @@ void TwitchTMIJob::runThread()
                     if(!val.isObject())
                         continue;
 
-                    game_id_map[val["id"].asString()] = val["name"].asString();
+                    mod->game_id_map[val["id"].asString()] = val["name"].asString();
                 } catch(const Json::Exception&) {
                     continue;
                 }
@@ -431,8 +428,8 @@ void TwitchTMIJob::runThread()
 
             channel.MakeLower();
 
-            if(!gameId.Equals("") && game_id_map.count(gameId))
-                title += " [" + game_id_map[gameId] + "]";
+            if(!gameId.Equals("") && mod->game_id_map.count(gameId))
+                title += " [" + mod->game_id_map[gameId] + "]";
 
             if(!type.Equals("") && !type.Equals("live")) {
                 title += " [" + type.MakeUpper() + "]";
