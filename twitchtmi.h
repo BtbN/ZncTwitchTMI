@@ -41,7 +41,7 @@ class TwitchTMI : public CModule
     private:
     TwitchTMIUpdateTimer *timer;
     std::time_t lastFrankerZ;
-    std::unordered_map<CString, std::time_t> lastPlay;
+    std::unordered_map<CString, std::pair<std::time_t, int> > lastPlay;
     bool noLastPlay;
     std::unordered_set<CString> liveChannels;
     std::mutex job_thread_lock;
