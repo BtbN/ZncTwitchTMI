@@ -186,6 +186,11 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
     {
         CString msg_id = msg.GetTag("msg-id");
         CString new_msg = "<unknown usernotice " + msg_id + "> from " + realNick;
+
+        CString sys_msg = msg.GetTag("system-msg");
+        if(!sys_msg.empty())
+            new_msg += ": " + sys_msg;
+
         if(msg_id == "sub" || msg_id == "resub") {
             CString dur = msg.GetTag("msg-param-months");
             CString plan = subPlanToName(msg.GetTag("msg-param-sub-plan"));
@@ -201,8 +206,6 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
                 new_msg += " saying: " + txt;
             else
                 new_msg += "!";
-
-            realNick = "jtv";
         } else if(msg_id == "subgift") {
             CString rec = msg.GetTag("msg-param-recipient-display-name");
             CString plan = subPlanToName(msg.GetTag("msg-param-sub-plan"));
@@ -220,8 +223,8 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
             new_msg = "<unknown ritual " + rit + ">";
             if(rit == "new_chatter")
                 new_msg = realNick + " is new here, saying: " + txt;
-        } else if(msg_id == "giftpaidupgrade") {
-            new_msg = msg.GetTag("system-msg");
+        } else if(msg_id == "giftpaidupgrade" || msg_id == "submysterygift") {
+            new_msg = sys_msg;
         }
 
         realNick = "ttv";
