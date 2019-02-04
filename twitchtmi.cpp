@@ -192,7 +192,9 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
             new_msg += ": " + sys_msg;
 
         if(msg_id == "sub" || msg_id == "resub") {
-            CString dur = msg.GetTag("msg-param-months");
+            CString dur = msg.GetTag("msg-param-cumulative-months");
+	    CString strk = msg.GetTag("msg-param-streak-months");
+	    CString do_strk = msg.GetTag("msg-param-should-share-streak");
             CString plan = subPlanToName(msg.GetTag("msg-param-sub-plan"));
             CString txt = msg.GetParam(1).Trim_n();
 
@@ -201,6 +203,9 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
                 new_msg += "subscribed with a " + plan + " sub";
             else
                 new_msg += "resubscribed with a " + plan + " sub for " + dur + " months";
+
+            if(do_strk != "0")
+                new_msg += ", currently on a " + strk + " month streak";
 
             if(txt != "")
                 new_msg += " saying: " + txt;
