@@ -189,12 +189,12 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 
         CString sys_msg = msg.GetTag("system-msg");
         if(!sys_msg.empty())
-            new_msg += ": " + sys_msg;
+            new_msg = sys_msg;
 
         if(msg_id == "sub" || msg_id == "resub") {
             CString dur = msg.GetTag("msg-param-cumulative-months");
-	    CString strk = msg.GetTag("msg-param-streak-months");
-	    CString do_strk = msg.GetTag("msg-param-should-share-streak");
+            CString strk = msg.GetTag("msg-param-streak-months");
+            CString do_strk = msg.GetTag("msg-param-should-share-streak");
             CString plan = subPlanToName(msg.GetTag("msg-param-sub-plan"));
             CString txt = msg.GetParam(1).Trim_n();
 
