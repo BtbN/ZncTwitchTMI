@@ -56,9 +56,15 @@ std::string getUrl(const std::string &url, const std::list<std::string> &extraHe
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCB);
 
     struct curl_slist *hlist = nullptr;
-    hlist = curl_slist_append(hlist, "Client-ID: jzkbprff40iqj646a697cyrvl0zt2m6");
+    bool has_client_id = false;
     for(const std::string &extraHeader: extraHeaders)
+    {
         hlist = curl_slist_append(hlist, extraHeader.c_str());
+        if(extraHeader.substr(0, 10) == "Client-ID:")
+            has_client_id = true;
+    }
+    if(!has_client_id)
+        hlist = curl_slist_append(hlist, "Client-ID: jzkbprff40iqj646a697cyrvl0zt2m6");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hlist);
 
     std::istringstream postSs(postData);
