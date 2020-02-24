@@ -39,3 +39,4 @@ set_target_properties(twitch PROPERTIES
 
 include(GNUInstallDirs)
 install(TARGETS twitch DESTINATION "${CMAKE_INSTALL_LIBDIR}/znc")
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/tmpl/" DESTINATION share/znc/modules/twitch/tmpl)

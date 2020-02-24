@@ -1,0 +1,59 @@
+<? INC Header.tmpl ?>
+
+<form method="post" action="<? VAR URIPrefix TOP ?><? VAR ModPath ?>">
+	<? INC _csrf_check.tmpl ?>
+	<div class="section">
+		<h3>Twitch API Credentials</h3>
+		<div class="sectionbg">
+            <div class="sectionbody">
+                <div class="subsection">
+					<div class="inputlabel">Client ID:</div>
+					<input type="text" name="ClientID" value="<? VAR ClientID ?>" class="half" title="Enter Twitch-App Client ID" />
+				</div>
+                <div class="subsection">
+					<div class="inputlabel">Client Secret:</div>
+					<input type="password" name="ClientSecret" class="half" title="Enter Twitch-App Client Secret" />
+				</div>
+                <div class="subsection">
+					<div class="inputlabel">Redirect URL</div>
+					<input type="text" name="RedirectUrl" value="<? VAR RedirectUrl ?>" class="half" title="Redirect URL to be set on Twitch App" />
+                    <br /><span class="info">Set this as allowed redirect URL in your Twitch-App.
+                    <br />The default URL just echos out the code received from Twitch.
+                    <br />Replace with your own or dummy and copy code from URL if desired.</span>
+				</div>
+                <div class="subsection">
+					<div class="inputlabel">Auth Code</div>
+					<input type="text" name="AuthCode" class="half" title="Post-Auth Code from Twitch" />
+                    <br /><span class="info">Auth code received from Twitch Post-Auth. Entering this will log you in.</span>
+				</div>
+                <div class="submitline">
+                    <input type="hidden" name="submitted" value="1" />
+                    <input type="submit" value="Save" />
+                </div>
+			</div>
+		</div>
+	</div>
+</form>
+
+<form method="get" action="https://id.twitch.tv/oauth2/authorize" target="_blank">
+	<div class="section">
+		<h3>Twitch Authentication</h3>
+		<div class="sectionbg">
+            <div class="sectionbody">
+                <div class="subsection">
+                    Logged in as: <? VAR LoggedInUser ?>
+                </div>
+                <div class="submitline">
+                    <input type="hidden" name="client_id" value="<? VAR ClientID ?>" />
+                    <input type="hidden" name="redirect_uri" value="<? VAR RedirectUrl ?>" />
+                    <input type="hidden" name="response_type" value="code" />
+                    <input type="hidden" name="scope" value="chat:read chat:edit channel:moderate whispers:read whispers:edit user:edit:broadcast channel_editor" />
+                    <input type="hidden" name="force_verify" value="true" />
+                    <input type="submit" value="Login" />
+                </div>
+			</div>
+		</div>
+	</div>
+</form>
+
+<? INC Footer.tmpl ?>

@@ -66,6 +66,106 @@ bool TwitchTMI::OnBoot()
     return true;
 }
 
+CString TwitchTMI::GetWebMenuTitle()
+{
+    return "Twitch";
+}
+
+void TwitchTMI::DoTwitchLogin(const CString &code)
+{
+    CString authUrl = "https://id.twitch.tv/oauth2/token?client_id=" + GetNV("ClientID");
+    authUrl += "&client_secret=" + GetNV("ClientSecret");
+    authUrl += "&code=" + code;
+    authUrl += "&grant_type=authorization_code";
+    authUrl += "&redirect_uri=" + GetNV("RedirectUrl");
+
+    try
+    {
+        Json::Value res = getJsonFromUrl(authUrl, { "Client-ID: " + GetNV("ClientID") }, "{}");
+        Json::Value root = getJsonFromUrl("https://api.twitch.tv/helix/users", { "Client-ID: " + GetNV("ClientID"), "Authorization: Bearer " + res["access_token"].asString() });
+
+        SetNV("TwitchUser", root["data"][0]["display_name"].asString());
+        SetNV("RefreshToken", res["refresh_token"].asString());
+    } catch(const Json::Exception&) {
+        DelNV("TwitchUser");
+        DelNV("RefreshToken");
+        return;
+    }
+}
+
+bool TwitchTMI::OnWebRequest(CWebSock &sock, const CString &pageName, CTemplate &tmpl)
+{
+    if (pageName != "index")
+        return false;
+
+    if (sock.IsPost()) {
+        SetNV("ClientID", sock.GetParam("ClientID"));
+        CString secret = sock.GetParam("ClientSecret");
+        if (!secret.empty())
+            SetNV("ClientSecret", secret);
+        SetNV("RedirectUrl", sock.GetParam("RedirectUrl"));
+
+        CString code = sock.GetParam("AuthCode");
+        if (!code.empty())
+        {
+            DoTwitchLogin(code);
+        }
+        else
+        {
+            DelNV("TwitchUser");
+            DelNV("RefreshToken");
+        }
+    }
+
+    CString redirUrl = GetNV("RedirectUrl");
+    if (redirUrl.empty())
+        redirUrl = "https://btbn.de/twitch_state.php";
+    tmpl["RedirectUrl"] = redirUrl;
+    tmpl["ClientID"] = GetNV("ClientID");
+
+    CString twUser = GetNV("TwitchUser");
+    if (twUser.empty())
+        twUser = "Not logged in";
+    tmpl["LoggedInUser"] = twUser;
+
+    return true;
+}
+
+CString TwitchTMI::GetTwitchAccessToken()
+{
+    CString refresh_token = GetNV("RefreshToken");
+    if (refresh_token.empty())
+        return CString();
+    
+    CString authUrl = "https://id.twitch.tv/oauth2/token?client_id=" + GetNV("ClientID");
+    authUrl += "&client_secret=" + GetNV("ClientSecret");
+    authUrl += "&refresh_token=" + refresh_token;
+    authUrl += "&grant_type=refresh_token";
+    
+    try
+    {
+        Json::Value res = getJsonFromUrl(authUrl, { "Client-ID: " + GetNV("ClientID") }, "{}");
+        SetNV("RefreshToken", res["refresh_token"].asString());
+        return res["access_token"].asString();
+    } catch(const Json::Exception&) {
+        DelNV("TwitchUser");
+        DelNV("RefreshToken");
+        return CString();
+    }
+}
+
+CModule::EModRet TwitchTMI::OnIRCRegistration(CString &sPass, CString &sNick, CString &sIdent, CString &sRealName)
+{
+    CString token = GetTwitchAccessToken();
+    if (token.empty())
+        return CModule::HALT;
+    
+    sPass = "oauth:" + token;
+    sNick = GetNV("TwitchUser");
+    
+    return CModule::HALTMODS;
+}
+
 void TwitchTMI::OnIRCConnected()
 {
     PutIRC("CAP REQ :twitch.tv/membership");

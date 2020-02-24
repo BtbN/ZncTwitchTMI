@@ -24,6 +24,10 @@ class TwitchTMI : public CModule
     bool OnLoad(const CString &sArgsi, CString &sMessage) override;
     bool OnBoot() override;
 
+    CString GetWebMenuTitle() override;
+    bool OnWebRequest(CWebSock &sock, const CString &pageName, CTemplate &tmpl) override;
+
+    CModule::EModRet OnIRCRegistration(CString &sPass, CString &sNick, CString &sIdent, CString &sRealName) override;
     void OnIRCConnected() override;
 
     CModule::EModRet OnUserRawMessage(CMessage &msg) override;
@@ -35,6 +39,8 @@ class TwitchTMI : public CModule
     bool OnServerCapAvailable(const CString &sCap) override;
 
     private:
+    CString GetTwitchAccessToken();
+    void DoTwitchLogin(const CString &code);
     void InjectMessageHelper(CChan *chan, const CString &action);
     void PutUserChanMessage(CChan *chan, const CString &format, const CString &text);
 
