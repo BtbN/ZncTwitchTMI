@@ -158,7 +158,7 @@ CModule::EModRet TwitchTMI::OnIRCRegistration(CString &sPass, CString &sNick, CS
 {
     CString token = GetTwitchAccessToken();
     if (token.empty())
-        return CModule::HALT;
+        return CModule::CONTINUE;
     
     sPass = "oauth:" + token;
     sNick = GetNV("TwitchUser");
