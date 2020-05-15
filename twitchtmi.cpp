@@ -1,5 +1,6 @@
 #include <znc/main.h>
 #include <znc/User.h>
+#include <znc/Utils.h>
 #include <znc/IRCNetwork.h>
 #include <znc/Modules.h>
 #include <znc/Nick.h>
@@ -60,8 +61,11 @@ bool TwitchTMI::OnBoot()
 {
     initCurl();
 
-    timer = new TwitchTMIUpdateTimer(this);
-    AddTimer(timer);
+    updateTimer = new TwitchTMIUpdateTimer(this);
+    AddTimer(updateTimer);
+
+    refreshTimer = new TwitchTokenRefreshTimer(this);
+    AddTimer(refreshTimer);
 
     return true;
 }
@@ -457,6 +461,31 @@ CModule::EModRet TwitchTMI::OnUserTextMessage(CTextMessage &msg)
 }
 
 
+TwitchTokenRefreshTimer::TwitchTokenRefreshTimer(TwitchTMI *tmod)
+    :CTimer(tmod, 21600, 0, "TwitchTokenRefreshTimer", "Refreshes Twitch Auth-Token")
+    ,mod(tmod)
+{
+}
+
+void TwitchTokenRefreshTimer::RunJob()
+{
+    CString twUser = mod->GetNV("TwitchUser");
+    if(twUser.empty())
+        return;
+
+    CString res = mod->GetTwitchAccessToken();
+
+    if(res.empty())
+    {
+        CUtils::PrintError("Failed refreshing oauth token for " + twUser);
+    }
+    else
+    {
+        CUtils::PrintMessage("Refreshed oauth token for " + twUser);
+    }
+}
+
+
 TwitchTMIUpdateTimer::TwitchTMIUpdateTimer(TwitchTMI *tmod)
     :CTimer(tmod, 10, 0, "TwitchTMIUpdateTimer", "Downloads Twitch information")
     ,mod(tmod)
@@ -477,6 +506,7 @@ void TwitchTMIUpdateTimer::RunJob()
 
     mod->AddJob(new TwitchTMIJob(mod, channels));
 }
+
 
 void TwitchTMIJob::runThread()
 {
