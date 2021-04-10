@@ -64,7 +64,7 @@ std::string getUrl(const std::string &url, const std::list<std::string> &extraHe
             has_client_id = true;
     }
     if(!has_client_id)
-        hlist = curl_slist_append(hlist, "Client-ID: jzkbprff40iqj646a697cyrvl0zt2m6");
+        hlist = curl_slist_append(hlist, "Client-ID: kimne78kx3ncx6brgo4mv6wki5h1ko");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hlist);
 
     std::istringstream postSs(postData);

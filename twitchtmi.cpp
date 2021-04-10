@@ -519,7 +519,7 @@ void TwitchTMIJob::runThread()
     }
 
     Json::Value root = getJsonFromUrl(
-        "https://api.twitch.tv/gql",
+        "https://gql.twitch.tv/gql",
         { "Content-Type: application/json" },
         "{ \"variables\": { \"logins\": [\"" + CString("\", \"").Join(channels.begin(), channels.end()) + "\"] },"
         " \"query\": \"query user_status($logins: [String!]){ users(logins: $logins) { broadcastSettings{ game{ name } title } login stream{ type } } }\" }");
