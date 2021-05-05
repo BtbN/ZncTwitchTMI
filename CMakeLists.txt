@@ -18,10 +18,6 @@ set(twitch_SOURCES
 	json/jsoncpp.cpp
 	json/json.h)
 
-set(twitch_group_SOURCES
-	twitchwhisp.cpp
-	twitchwhisp.h)
-
 add_library(twitch MODULE
 	${twitch_SOURCES})
 target_link_libraries(twitch
