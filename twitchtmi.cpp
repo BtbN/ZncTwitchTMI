@@ -91,6 +91,7 @@ void TwitchTMI::DoTwitchLogin(const CString &code)
         SetNV("TwitchUser", root["data"][0]["display_name"].asString());
         SetNV("RefreshToken", res["refresh_token"].asString());
     } catch(const Json::Exception&) {
+        CUtils::PrintError("Twitch login failed.");
         DelNV("TwitchUser");
         DelNV("RefreshToken");
         return;
@@ -152,8 +153,7 @@ CString TwitchTMI::GetTwitchAccessToken()
         SetNV("RefreshToken", res["refresh_token"].asString());
         return res["access_token"].asString();
     } catch(const Json::Exception&) {
-        DelNV("TwitchUser");
-        DelNV("RefreshToken");
+        CUtils::PrintError("Failed getting Twitch access token.");
         return CString();
     }
 }
