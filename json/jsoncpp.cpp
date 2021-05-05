@@ -79,6 +79,7 @@ license you like.
 #error "Compile with -I PATH_TO_JSON_DIRECTORY"
 #endif
 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 // //////////////////////////////////////////////////////////////////////
 // Beginning of content of file: src/lib_json/json_tool.h
