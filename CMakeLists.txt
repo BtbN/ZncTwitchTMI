@@ -5,6 +5,7 @@ project(znctwitch)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 
 find_package(ZNC REQUIRED)
 find_package(CURL REQUIRED)
@@ -16,10 +17,6 @@ set(twitch_SOURCES
 	jload.h
 	json/jsoncpp.cpp
 	json/json.h)
-
-set(twitch_group_SOURCES
-	twitchwhisp.cpp
-	twitchwhisp.h)
 
 add_library(twitch MODULE
 	${twitch_SOURCES})

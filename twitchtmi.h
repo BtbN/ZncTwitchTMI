@@ -11,10 +11,12 @@
 #include <list>
 
 class TwitchTMIUpdateTimer;
+class TwitchTokenRefreshTimer;
 
 class TwitchTMI : public CModule
 {
     friend class TwitchTMIUpdateTimer;
+    friend class TwitchTokenRefreshTimer;
     friend class TwitchTMIJob;
 
     public:
@@ -45,7 +47,8 @@ class TwitchTMI : public CModule
     void PutUserChanMessage(CChan *chan, const CString &format, const CString &text);
 
     private:
-    TwitchTMIUpdateTimer *timer;
+    TwitchTMIUpdateTimer *updateTimer;
+    TwitchTokenRefreshTimer *refreshTimer;
     std::time_t lastFrankerZ;
     std::unordered_map<CString, std::pair<std::time_t, int> > lastPlay;
     bool noLastPlay;
@@ -59,6 +62,20 @@ class TwitchTMIUpdateTimer : public CTimer
 
     public:
     TwitchTMIUpdateTimer(TwitchTMI *mod);
+
+    private:
+    void RunJob() override;
+
+    private:
+    TwitchTMI *mod;
+};
+
+class TwitchTokenRefreshTimer : public CTimer
+{
+    friend class TwitchTMI;
+
+    public:
+    TwitchTokenRefreshTimer(TwitchTMI *mod);
 
     private:
     void RunJob() override;

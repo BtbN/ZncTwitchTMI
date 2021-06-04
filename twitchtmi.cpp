@@ -1,5 +1,6 @@
 #include <znc/main.h>
 #include <znc/User.h>
+#include <znc/Utils.h>
 #include <znc/IRCNetwork.h>
 #include <znc/Modules.h>
 #include <znc/Nick.h>
@@ -60,8 +61,11 @@ bool TwitchTMI::OnBoot()
 {
     initCurl();
 
-    timer = new TwitchTMIUpdateTimer(this);
-    AddTimer(timer);
+    updateTimer = new TwitchTMIUpdateTimer(this);
+    AddTimer(updateTimer);
+
+    refreshTimer = new TwitchTokenRefreshTimer(this);
+    AddTimer(refreshTimer);
 
     return true;
 }
@@ -87,6 +91,7 @@ void TwitchTMI::DoTwitchLogin(const CString &code)
         SetNV("TwitchUser", root["data"][0]["display_name"].asString());
         SetNV("RefreshToken", res["refresh_token"].asString());
     } catch(const Json::Exception&) {
+        CUtils::PrintError("Twitch login failed.");
         DelNV("TwitchUser");
         DelNV("RefreshToken");
         return;
@@ -148,8 +153,7 @@ CString TwitchTMI::GetTwitchAccessToken()
         SetNV("RefreshToken", res["refresh_token"].asString());
         return res["access_token"].asString();
     } catch(const Json::Exception&) {
-        DelNV("TwitchUser");
-        DelNV("RefreshToken");
+        CUtils::PrintError("Failed getting Twitch access token.");
         return CString();
     }
 }
@@ -463,6 +467,31 @@ CModule::EModRet TwitchTMI::OnUserTextMessage(CTextMessage &msg)
 }
 
 
+TwitchTokenRefreshTimer::TwitchTokenRefreshTimer(TwitchTMI *tmod)
+    :CTimer(tmod, 21600, 0, "TwitchTokenRefreshTimer", "Refreshes Twitch Auth-Token")
+    ,mod(tmod)
+{
+}
+
+void TwitchTokenRefreshTimer::RunJob()
+{
+    CString twUser = mod->GetNV("TwitchUser");
+    if(twUser.empty())
+        return;
+
+    CString res = mod->GetTwitchAccessToken();
+
+    if(res.empty())
+    {
+        CUtils::PrintError("Failed refreshing oauth token for " + twUser);
+    }
+    else
+    {
+        CUtils::PrintMessage("Refreshed oauth token for " + twUser);
+    }
+}
+
+
 TwitchTMIUpdateTimer::TwitchTMIUpdateTimer(TwitchTMI *tmod)
     :CTimer(tmod, 10, 0, "TwitchTMIUpdateTimer", "Downloads Twitch information")
     ,mod(tmod)
@@ -484,6 +513,7 @@ void TwitchTMIUpdateTimer::RunJob()
     mod->AddJob(new TwitchTMIJob(mod, channels));
 }
 
+
 void TwitchTMIJob::runThread()
 {
     std::unique_lock<std::mutex> lock_guard(mod->job_thread_lock, std::try_to_lock);
@@ -495,7 +525,7 @@ void TwitchTMIJob::runThread()
     }
 
     Json::Value root = getJsonFromUrl(
-        "https://api.twitch.tv/gql",
+        "https://gql.twitch.tv/gql",
         { "Content-Type: application/json" },
         "{ \"variables\": { \"logins\": [\"" + CString("\", \"").Join(channels.begin(), channels.end()) + "\"] },"
         " \"query\": \"query user_status($logins: [String!]){ users(logins: $logins) { broadcastSettings{ game{ name } title } login stream{ type } } }\" }");
