@@ -30,7 +30,7 @@ target_include_directories(twitch SYSTEM
 target_compile_options(twitch
 	PRIVATE ${ZNC_DEFINITIONS} -Wno-shadow
 	PUBLIC -fno-strict-aliasing
-	PUBLIC -std=gnu++11)
+	PUBLIC -std=gnu++17)
 set_target_properties(twitch PROPERTIES
 	PREFIX "")
 
