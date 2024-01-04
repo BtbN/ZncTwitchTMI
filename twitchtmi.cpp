@@ -510,6 +510,8 @@ void TwitchTMIUpdateTimer::RunJob()
 
 void TwitchTMIJob::runThread()
 {
+    return;
+
     std::unique_lock<std::mutex> lock_guard(mod->job_thread_lock, std::try_to_lock);
 
     if(!lock_guard.owns_lock() || !channels.size())
