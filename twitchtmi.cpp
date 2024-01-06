@@ -248,7 +248,13 @@ CModule::EModRet TwitchTMI::OnRawMessage(CMessage &msg)
 {
     CString realNick = msg.GetTag("display-name").Trim_n();
     if (realNick == "")
+    {
         realNick = msg.GetNick().GetNick();
+    }
+    else if (realNick.CaseCmp(msg.GetNick().GetNick()) != 0)
+    {
+        realNick += CString("(") + msg.GetNick().GetNick() + CString(")");
+    }
 
     if(msg.GetCommand().Equals("HOSTTARGET"))
     {
